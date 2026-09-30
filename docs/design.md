@@ -44,8 +44,10 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 - `apps/web` and `apps/api` both import `packages/contract`. Neither imports the other.
 - In `apps/web`:
   - Only `src/ui/` imports React Aria and Recharts (D13, D29).
-  - `src/ui/` never imports from `src/features/`.
+  - `src/ui/` never imports from `src/features/` or `src/app/`.
   - Components never call `fetch`; only each feature's data-loading code does.
+- The one exception to "neither imports the other": the web app's test setup imports the API app, so the whole-app tests run the real server logic (§8).
+- ESLint rules (`no-restricted-imports`) enforce these boundaries, so crossing one fails the lint check.
 - The pure rules are plain functions without React: the translation step, the opened rows, the chart model.
 
 ### 2.3 Where it runs
@@ -138,7 +140,7 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
   - `/components` shows the Gallery, loaded on demand
   - `/docs` shows the Docs, loaded on demand
   - any other address redirects to `/`
-- **React Aria's `RouterProvider`** gets wouter's `navigate`, so React Aria's links navigate without reloading the page.
+- **`NavTabs` uses wouter's own `Link`,** which handles Cmd/Ctrl-click and accepts `aria-current`. React Aria's `Link` doesn't accept `aria-current` (checked in its types), and no other React Aria links are used, so React Aria's router integration isn't needed.
 - **The top bar** holds `NavTabs` (Dashboard, Components, Docs) on the left and `DemoSwitches` on the right, shown only on the Dashboard tab. On narrow screens it wraps onto two lines.
 - **Browser tab titles:** "Clients · Nevis home task", "Components · Nevis home task" and "Docs · Nevis home task".
 
@@ -198,8 +200,8 @@ Everything else is worked out from these two values, never stored. The data itse
 | State | What's on screen |
 |---|---|
 | First load (no data yet) | Placeholders shaped like the title row, the chart and the table |
-| Error (any kind, even if older numbers exist) | "Couldn't load clients" and a "Try again" button (`refetch`), in place of the chart and table |
-| New period loading (`isPlaceholderData`) | The previous numbers faded, and a small spinner next to the dropdown, which already shows the new choice |
+| Error (any kind, even if older numbers exist) | "Couldn't load clients" and a "Try again" button (`refetch`), in place of the chart and table. While the retry runs, the button shows it's busy. |
+| Refreshing: a request runs while numbers are on screen (a new period, a demo switch, a return to a period already seen) | The numbers on screen faded, and a small spinner next to the dropdown, which already shows the new choice |
 | Loaded | The chart and table |
 
 ### 5.6 Our components (`src/ui/`, D13, D29, D38)
@@ -209,13 +211,13 @@ Each has its examples file for the Components tab.
 | Component | Style | API (sketch) | Notes |
 |---|---|---|---|
 | `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]` | See below |
-| `StackedColumnChart` | props + render function | `months` (labels), `series`, `description`, `renderLabel(monthIndex)`, `labelledBy` | See below |
-| `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>`; the current tab gets `aria-current="page"`; styled per D39 |
-| `Select` | plain props | `label`, `items: { id, label }[]`, `selectedKey`, `onSelectionChange` | React Aria `Select`; the label can be visually hidden |
+| `StackedColumnChart` | props + render function | `title`, `description`, `monthLabels`, `shortMonthLabels`, `series`, `renderLabel(monthIndex)` | See below; a `<figure>` whose caption is the title |
+| `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>` built on wouter's `Link` and current location; the current tab gets `aria-current="page"`; styled per D39 |
+| `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); the label can be visually hidden |
 | `Switch` | plain props | `children` (label), `isSelected`, `onChange` | React Aria `Switch` |
-| `Button` | plain props | `children`, `onPress` | React Aria `Button`, one style |
+| `Button` | plain props | `children`, `onPress`, `isPending?` | React Aria `Button`, one style; the busy state keeps focus and is announced (used by "Try again") |
 | `Avatar` | plain props | `name`, `src?` | 20px circle; the photo when `src` is given, otherwise initials on a grey tint; hidden from screen readers (D16) |
-| `Card` | plain props | `children` | White, 8px corners |
+| `Card` | plain props | `children`, `variant?` (`padded` or `flush`) | White, 8px corners; the chart card has padding, the table card has none |
 | `Skeleton` | plain props | `width`, `height`, `radius?` | Gentle pulse, none with reduced motion |
 | `Spinner` | plain props | `label` | The small "new period loading" indicator |
 
@@ -264,7 +266,7 @@ Each has its examples file for the Components tab.
   - one column per month ("Feb 2024")
   - numbers formatted with `Intl.NumberFormat('en-US')` in tabular figures, so the digits line up
 - **`ClientsChart`:**
-  - a `Card` holding the caption (top-left, 14px, D19) and `StackedColumnChart`
+  - a padded `Card` holding `StackedColumnChart`, whose title is the caption (top-left, 14px, D19)
   - the label reads: the month ("May 2024"), then the subject's total from the server, then each part with its colour square and number, e.g. "May 2024 · Company: 301 · Branch 1: 156 · Branch 2: 87 · Branch 3: 36"
 - **`PeriodSelect`:** the `PERIODS` from the contract, with the labels "Last 12 months", "Last 6 months", "Last 3 months" and "Last month" (D9).
 - **`DemoSwitches`:** a group labelled "Demo settings" with the switches "Slow responses" and "Fail requests" (D11).
@@ -355,7 +357,10 @@ Measured as compressed JavaScript over React's own 67 KB (D13, D26, D27, D29–D
 The plan, the research behind it, and what we deliberately don't test are in [testing-strategy.md](testing-strategy.md). In short:
 
 - **The whole app** in Vitest's simulated browser, with MSW as the only fake. It passes requests on to the real Hono app.
-- **A few API tests** with `app.request`, at most one pure-function test, and one or two Playwright tests, written last.
+- **A few API tests** with `app.request`, at most one pure-function test, and one Playwright test, written last.
+- **Verified before planning:**
+  - Recharts draws its bars and handles its keyboard in the simulated browser, given a small stand-in for the browser's size-watching API, so the chart test (#8) doesn't need a real browser.
+  - MSW passes the simulated browser's requests to the real Hono app.
 - **Every test is seen failing once**, by breaking one line on purpose.
 
 The list is revisited before tests are written.
@@ -363,9 +368,9 @@ The list is revisited before tests are written.
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
 - **Node 24, npm workspaces, TypeScript 6.0.3** in strict mode (not 7.0: D40).
-- **Linting and formatting:** ESLint 10 with typescript-eslint (type-aware) and the React Hooks rules, plus Prettier. `eslint-plugin-jsx-a11y` stays only if it works with ESLint 10 (D33).
+- **Linting and formatting:** ESLint 10 with typescript-eslint (type-aware) and the React Hooks rules, plus Prettier. `eslint-plugin-jsx-a11y` isn't used: its latest release supports ESLint only up to version 9 (checked 2026-10-01, D33).
 - **Root scripts:**
-  - `dev`: the API and the page together
+  - `dev`: the API and the page together, run side by side with `concurrently` (the API through `tsx watch`)
   - `build`
   - `typecheck`
   - `lint`

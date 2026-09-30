@@ -47,11 +47,10 @@ It also openly lacks guidance on whether a change is worth testing at all ([issu
 | 5 | The rule for what the chart shows, as a table of cases: the latest opened row wins, closing falls back, rows hidden inside a closed parent don't count (but stay open for when it reopens), everything closed shows Company. | Pure function | The chart stuck on a row that's no longer visible |
 | 6 | First load: placeholders, then Company open with "Company by branch"; Branch 2 can't open; Company in May shows 301. | Whole app | A crash on rows with nothing inside; the UI recalculating 279 |
 | 7 | Opening and closing rows by mouse and keyboard moves the chart: Branch 1 → Anna → back → Company. | Whole app | Keyboard opening not connected to the chart; wrong fallback |
-| 8 | How the data maps into the chart: May's label shows 156 / 87 / 36 and the server's total, 301; Escape hides it. | Whole app (real browser if Recharts' keyboard handling won't run in the simulated one) | Parts shifted by a month; the total summed instead of the server's |
+| 8 | How the data maps into the chart: May's label shows 156 / 87 / 36 and the server's total, 301; Escape hides it. | Whole app (verified: Recharts' keyboard handling runs in the simulated browser) | Parts shifted by a month; the total summed instead of the server's |
 | 9 | Changing the period keeps the old numbers (faded) until the new ones arrive, then shows only the new months. | Whole app | Flashing back to placeholders; old months under the new label |
 | 10 | On error: "Couldn't load clients" and "Try again", with no stale numbers; Try again works. | Whole app | Old data under the wrong label |
 | 11 | At 375px, neither page scrolls sideways, and Docs shows its content. | Real browser | Something overflowing on phones; docs missing from the build |
-| 12 | Only if #8 can't run in the simulated browser: the same check in a real browser. | Real browser | Same as #8 |
 
 ## What we deliberately don't test
 

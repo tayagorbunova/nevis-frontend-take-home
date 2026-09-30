@@ -566,7 +566,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 - **Alive:** version 3.13.0 released 2026-09-30, 8 releases in the last year, 9 people committing, 10 contributions merged in 90 days, 7.9k GitHub stars, 2.3M weekly downloads. Unlicense (public domain).
 - **Correct links:** its `Link` ignores clicks made with Ctrl, Cmd, Alt or Shift, or with anything but the left button (source, lines 277–281), so opening a tab in a new browser tab still works.
-- **Fits React Aria:** `useLocation()` returns a `navigate` function, which is what React Aria's links need to navigate without reloading the page.
+- **Fits our tabs:** its `Link` accepts `aria-current`, which the tabs need to mark the current page. React Aria's `Link` doesn't (checked in its types), so `NavTabs` uses wouter's `Link` directly and React Aria's router integration isn't needed.
 
 **Options considered:**
 
@@ -609,6 +609,8 @@ Only the Latin file downloads, because Fontsource splits the font by alphabet.
 Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloads), Prettier 3.9 (158M), typescript-eslint 8.71 (104M), React Hooks rules 7.1 (113M).
 
 **One caveat:** the usual accessibility lint plugin (`eslint-plugin-jsx-a11y`, 55M weekly) hasn't had a release since October 2024. We check that it works with ESLint 10 during setup and drop it if it doesn't. React Aria and the automated accessibility checks in tests cover the same ground.
+
+**Update (2026-10-01, while planning):** its latest release (6.10.2) supports ESLint only up to version 9, so it's dropped.
 
 **Why:** It's the standard reviewers expect, and the type-aware checks catch the bugs that matter most in our data-loading code.
 
