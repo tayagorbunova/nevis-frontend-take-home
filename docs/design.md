@@ -274,21 +274,45 @@ Each has its examples file for the Components tab.
   - Vite is allowed to read the repo-root `docs/` folder
 - **`GalleryPage`:** collects every `src/ui/**/*.examples.tsx` with Vite's `import.meta.glob`, and shows one section per component with its named examples.
 
-### 5.8 Styles (D25, D32, D39)
+### 5.8 Styles (D25, D32, D39, D41)
 
-- **CSS modules** for every component, plus `styles/tokens.css` as CSS variables named after the Figma variables:
-  - `--content-primary: #141413` and `--content-secondary`: the ink at 60%
-  - `--outline-solid` (8%), `--outline-dotted` (16%), `--surface-hover` (4%)
-  - `--background-primary: #F7F5ED`, `--background-secondary: #FFFFFF`
-  - `--chart-1` … `--chart-5` (D17) and a neutral grey for any sixth or later part
-  - the type scale: title 35px/125% Inter Display, body 14/20, footnote 12/16
-  - corners: cards 8px, columns 4px, legend squares 2px
-  - spacing:
-    - page: 16px sides, 24px top and bottom, 16px gaps
-    - chart card: padding 24/16/16/16
-- **Font:** `@fontsource-variable/inter/opsz.css`, the Latin file only, served from our own site (D32). `font-optical-sizing: auto` picks the Display cut at 35px.
-- **Focus:** a 2px outline in the ink colour, drawn inside rows and cells.
-- **Motion:** the chevron turns and the chart's columns move briefly on change. Both are off under `prefers-reduced-motion: reduce`.
+**Tokens** live in `styles/tokens.css` on `:root`, in two layers (D41):
+
+- **Base tokens** hold raw values, named by their place in a scale:
+  - colours: `--ink` (#141413) and its opacity steps `--ink-60`, `--ink-16`, `--ink-8` and `--ink-4`; `--paper` (#F7F5ED); `--white`; the chart palette `--lavender`, `--peach`, `--maroon`, `--sage`, `--mustard` (D17); a neutral grey
+  - type: Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25)
+  - spacing in rem (for example 0.5, 1, 1.125, 1.5 and 1.75rem, i.e. 8, 16, 18, 24 and 28px)
+  - radii (2, 4, 8px), the 1px border, the 2px focus outline, motion durations
+- **Semantic tokens** name a purpose and point to a base token. Components use only these for colours, and each notes the Figma variable it comes from:
+  - `--color-text` and `--color-text-muted`: Content/Primary, and Content/Secondary at 60%
+  - `--color-border` (Outline/Line solid at 8%), `--color-gridline` (Outline/Line dotted at 16%), `--color-row-hover` (Surface/Secondary at 4%)
+  - `--color-page` (Background/Primary), `--color-card` (Background/Secondary)
+  - `--color-chart-1` … `--color-chart-5`, `--color-chart-other`, and `--focus-ring`
+- **Figma's px values become rem** (px ÷ 16), so the layout grows with the reader's text size. For example, the 264px name column becomes 16.5rem, and the 56px row becomes a 3.5rem *minimum* height. Borders, outlines and dividers stay in px.
+
+**Rules for component CSS** (D41):
+
+- Components reference tokens, never raw colours or one-off sizes. Obvious literals like `0`, `100%`, `1fr` and `50%` stay inline.
+- `ui/` components are closed: no `className` or `style` props, so looks change only through props such as `variant`.
+- Components have no outer margins; parents space their children with `gap`.
+- React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
+- Every state of every interactive component is styled and shown in the Components tab.
+- **Mobile first:** base styles describe the narrowest layout, and `min-width` media queries in rem add to it (we expect one or two, e.g. `48rem`). Container queries apply where a component depends on its own width, such as the chart shortening its month labels.
+- Elements containing text get no fixed height (minimum height plus padding instead), long names wrap, and flex or grid children that hold text can shrink.
+- Only `transform` and `opacity` are animated, with the properties listed explicitly (never `transition: all`). Non-essential motion lives inside `@media (prefers-reduced-motion: no-preference)`. The row hover shade appears instantly.
+- Global CSS holds only the reset, the tokens, the font and base element styles.
+- Vite processes CSS with Lightning CSS and our browser targets (recent Chrome, Edge and Firefox; Safari 16.4 and newer), so nesting and other newer syntax work in every supported browser. Styles that depend on CSS order are checked in a production build.
+
+**Font:** `@fontsource-variable/inter/opsz.css`, the Latin file only, served from our own site (D32). `font-optical-sizing: auto` picks the Display cut at 35px. Table numbers use tabular figures.
+
+**Focus:** a 2px outline in the ink colour, drawn inside rows and cells. The table's scroll container gets a left scroll padding equal to the name column's width, so a focused cell never hides behind the pinned column (WCAG 2.4.11).
+
+**Motion:**
+
+- The chevron turns (a transform).
+- The faded "new period loading" state and the placeholders' pulse use opacity.
+- The chart's columns move briefly on change. That's a small SVG, so it's cheap to repaint.
+- All of it is off under reduced motion.
 
 ## 6. Accessibility summary
 
@@ -305,10 +329,13 @@ Each has its examples file for the Components tab.
   - the dropdown, switches and button come from React Aria
   - the tabs are links, with `aria-current`
   - the avatar is decorative
+- **Text contrast** (checked): the design's grey text (the ink at 60%) reaches 4.81:1 on the white cards and 4.68:1 on the page, above the 4.5:1 minimum. The main text is 18.4:1.
 - **Also covered:**
-  - visible focus everywhere
+  - visible focus everywhere, never hidden behind the pinned column
   - reduced motion respected
-  - no page-level sideways scrolling at 375px (D15)
+  - zoom never restricted
+  - text grows with the reader's font-size setting (rem units)
+  - no page-level sideways scrolling at 375px (D15), also checked at 320px (D41)
 
 ## 7. Page weight
 
@@ -329,7 +356,7 @@ The plan, the research behind it, and what we deliberately don't test are in [te
 - **A few API tests** with `app.request`, at most one pure-function test, and one or two Playwright tests, written last.
 - **Every test is seen failing once**, by breaking one line on purpose.
 
-The list is revisited with Taya before tests are written.
+The list is revisited before tests are written.
 
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
@@ -349,7 +376,14 @@ The list is revisited with Taya before tests are written.
 ## 10. How the work is delivered
 
 - **One branch and pull request per piece of work,** with conventional commit messages. The repo owner merges (D23).
-- **Components without a Figma design get a mockup first.** An agent shows all their states, and they're built only after Taya approves (D39).
+- **Components without a Figma design get a mockup first.** An agent shows all their states, and they're built only after the repo owner approves (D39).
+- **Every UI change is checked in the running app** (D41):
+  - widths of 320px, 375px and a wide window
+  - very large browser text and 200% zoom
+  - keyboard only
+  - forced colours and reduced motion, emulated in the browser's developer tools
+  - the contrast of any new colour pair
+  - on a phone: no hover state sticking after a tap
 - **The tests follow the agreed list** (§8), after it's revisited.
 - **The last stage covers the docs and release:**
   - split and condense `decisions.md` into `docs/decisions/product.md` and `technical.md` (D20)
