@@ -429,3 +429,13 @@ The page never imports server code; both import the contract. On Vercel it's one
 **Options considered:**
 
 - One package with folders (`src/`, `server/`, a shared folder): the simplest setup, but the boundaries exist only by convention.
+
+## 23. Work reaches `main` through pull requests
+
+**Decision:** Every piece of work goes on its own branch and reaches `main` through a pull request on GitHub. Each pull request runs the automated checks and gets its own Vercel preview link. Commit messages follow the conventional style (`docs:`, `feat:`, `fix:`, `test:`, `chore:`). The repo owner merges each pull request.
+
+**Why:** It's how real teams work, every change gets checks and a preview for free, and the history reads as a series of small, described steps.
+
+**Options considered:**
+
+- Committing straight to `main`: fastest, with no ceremony, but the history is a flat list of commits with no checks or previews per change.
