@@ -361,6 +361,8 @@ The labels follow WCAG's rules for content that appears on hover or focus: Escap
 
 **Why a single Tab stop:** it works the same way as the table, and keyboard users who aren't interested in the chart skip it with one Tab instead of twelve.
 
+**Updated by decision 29 (Recharts):** Home / End are dropped, because with at most 12 months ← / → is enough. Escape is added by our own code. Screen readers hear each month's label read aloud as focus moves, instead of every bar carrying its own label.
+
 **Options considered:**
 
 - No labels, exactly like the design: the table already has every number, but the chart is harder to read.
@@ -439,3 +441,189 @@ The page never imports server code; both import the contract. On Vercel it's one
 **Options considered:**
 
 - Committing straight to `main`: fastest, with no ceremony, but the history is a flat list of commits with no checks or previews per change.
+
+## 24. The server is built with Hono
+
+**Decision:** The API uses [Hono](https://hono.dev/), a small, modern server library.
+
+**Why** (each point checked against Hono's docs):
+
+- The same app runs as a normal Node.js server locally (official Node.js adapter) and on Vercel ("Hono can be deployed to Vercel with zero-configuration"). Exactly how Vercel picks it up inside our monorepo, next to the Vite page, gets verified early in the build with a small test deploy.
+- Tests call the server directly with `app.request('/api/…')`, without starting it.
+- It has built-in request checking, plus official Zod and Standard Schema validators, so the period check can reuse the schema from `packages/contract`.
+- It keeps the server as small as the job needs: one address, a period check, and the demo notes.
+
+**Options considered:**
+
+- Express: the best-known option and supported by Vercel, but its design is older, its TypeScript support is weaker, and request checking needs extra pieces.
+- Fastify: fast and robust, with built-in schemas, but heavier than one address needs.
+- Plain Node.js with no library: zero dependencies, but we'd hand-write routing, query parsing and response headers.
+
+## 25. Styles are plain CSS modules
+
+**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables, named after the Figma variables (`--content-primary`, `--background-secondary`, …). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
+
+**Why:** Modern CSS has what we need built in, including nesting and variables. Vite supports CSS modules with no setup. That's one tool fewer to install, configure and explain.
+
+**We considered SCSS**, which Nevis's job ad lists. In an app this size, the only SCSS feature we'd use is reusable snippets, and those are covered elsewhere: React Aria ships a `VisuallyHidden` component, and the focus outline is one shared style. Switching later is trivial, because every CSS file is already valid SCSS. In Nevis's codebase, we'd follow its SCSS conventions.
+
+**We also considered Tailwind:** styles written as short class names in the markup (e.g. `px-4 py-2 text-sm`). Fast to write and popular, but it's a different approach from Nevis's stack, and the long class strings make components harder to read.
+
+## 26. Data loading uses TanStack Query
+
+**Decision:** The page loads data with [TanStack Query](https://tanstack.com/query) (version 5.104, about 10 KB compressed, measured the same way as decision 13).
+
+**What it handles for us** (the requirements from decisions 8–11):
+
+- It tracks loading, error and refreshing, which drive the placeholders, the error message and the faded numbers.
+- One setting keeps the previous numbers on screen while a new period loads.
+- It ignores outdated answers, so switching periods quickly shows the latest choice, not whichever answer arrives last.
+- It remembers answers per period, so switching back to a period already seen is instant.
+- It provides the retry behind "Try again".
+
+**Why:** It's small, widely used, and handles exactly the tricky parts, which are also the easiest to get subtly wrong in our own code.
+
+**Options considered:**
+
+- Our own small helper around `fetch` (about 60–80 lines): no dependency, but we'd rebuild what TanStack Query already does and have to test those tricky cases ourselves.
+- React 19's newer tools (`use`, Suspense, transitions): modern, but remembering answers, retries and cancelling would still be ours to build, and the loading and error flow is harder to follow and explain.
+
+## 27. Data is checked at runtime with shared Zod schemas
+
+**Problem:** TypeScript checks our code while we write it, but not what actually arrives over the network. Outside data enters in two places: the server receives the period from the page, and the page receives the data from the server.
+
+**Decision:** `packages/contract` describes the data's shape once, with [Zod](https://zod.dev/) Mini, and both sides use it:
+
+- The server checks the period it's asked for. A bad value gets a clear "unknown period" error.
+- The page checks the server's answer before showing it. Anything malformed becomes the normal error state (decision 10) instead of a crash deep inside the chart or table.
+- The TypeScript types are generated from the same schemas, so types and checks can never disagree.
+
+**Size:** measured with Zod 4.6, the full edition adds about 26 KB to the page, and the Mini edition does the same checks for about 5 KB. Mini is what we use.
+
+**Why:** The UI only presents what the server sends, and it should notice when that isn't what we expect. At 5 KB, the check costs next to nothing.
+
+**Options considered:**
+
+- TypeScript types only, with the page trusting the server: smaller and simpler, but a malformed answer would crash deep in the page instead of showing a clear error.
+- Checking only on the server: protects the server, but the page still trusts whatever comes back.
+
+## 28. The dashboard's state isn't kept in the page address
+
+**Decision:** The address says only which tab you're on (`/` or `/docs`, decision 21). The chosen period and the opened rows aren't in it, so every reload starts fresh: the last 12 months, company open. The demo switches are still remembered by the browser (decision 11).
+
+**Why:** Putting the state in the address makes views shareable, and whether they should be shareable is a product question to answer first. Who shares with whom? Should an advisor's link show a colleague's numbers? Until that's settled, we don't build it.
+
+**Within one visit, nothing is lost:** switching to the Docs tab and back keeps the dashboard exactly as you left it (period and opened rows), because that state lives above the tabs rather than inside the dashboard page. Only a reload starts fresh.
+
+**Later:** Two README follow-ups:
+
+- An open product question: how important is it to keep what someone was looking at, across reloads, visits, devices and shared links?
+- Once sharing is agreed: put the period in the address first (cheap, and the most useful), then possibly the opened rows.
+
+**Options considered:**
+
+- The period only, e.g. `/?period=last-6-months`: cheap, and reloads keep the period.
+- The period and the opened rows: a link reproduces exactly what you see, but every open and close must update the address, and the rows' random ids make the addresses ugly.
+
+## 29. The chart uses Recharts, wrapped in our own component
+
+**Decision:** The chart is drawn by [Recharts](https://recharts.github.io/) 3, hidden inside our own chart component. The rest of the app never imports Recharts; it only uses our component and its API.
+
+**Why:** The full comparison of ten libraries, with sources, is in [chart-library-comparison.md](chart-library-comparison.md). In short:
+
+- **Fit:** the only free library that draws the design's rounded columns exactly (`BarStack`), and its keyboard support is on by default: one Tab stop, ← / → between months. It draws SVG, so our CSS variables apply and tests can check the drawn bars.
+- **Popularity:** by far the most used chart library in React apps (67.9M weekly downloads, against 5.5M for Chart.js's React wrapper).
+- **Alive:** 14 releases in the last year, 27 people committing, 274 contributions merged in 90 days, and most new issues get closed. That makes it the least likely of the free options to be abandoned or to leave a bug unfixed.
+- **Common practice:** most teams use a library. Large companies with design systems usually wrap a library or low-level building blocks in their own components. Wrapping it means that if Recharts ever became a problem, only our one component would change, the same boundary as with React Aria (decision 13).
+
+**What changes in decision 18:**
+
+- Kept: one Tab stop, ← / → between months with the label following, hover and tap, and the label's content (month, parts, total from the server).
+- Escape to hide the label isn't built in, so we add it (Recharts lets us control whether the label shows). To be confirmed with a quick test.
+- Home / End are dropped: with at most 12 months, ← / → is enough.
+- Screen readers hear each month's label read aloud as focus moves, instead of every bar carrying its own label. Recharts adds that announcement only to its default label, so our own label must add it back itself.
+
+**Cost:**
+
+- About +116 KB of compressed JavaScript, the heaviest piece on the page. Everything together is roughly 280 KB (React 67, React Aria 84, Recharts 116, TanStack Query 10, Zod Mini 5). That's fine for a work dashboard, and the README says so.
+- Recharts draws nothing until it knows its size, so tests give the chart a fixed size or provide the browser's size-watching API.
+
+**Options considered** (details in the comparison):
+
+- Chart.js: half the size and very well known, but it draws on a canvas (no individual bars for tests or screen readers, no keyboard support), and its maintenance has slowed to one release a year.
+- Highcharts: the richest accessibility, but it needs a paid licence for commercial use.
+- MUI X Charts: actively maintained with good keyboard support, but the columns' bottoms stay square, and it brings MUI's own styling system into our CSS-modules app.
+- visx: small (+26 KB) and lets us match decision 18 exactly, but we'd still draw the chart ourselves.
+- Our own chart without any library: rejected in favour of a well-maintained library.
+
+## 30. The two tab addresses are handled by wouter
+
+**Decision:** [wouter](https://github.com/molefrog/wouter), a tiny router, switches between `/` (Dashboard) and `/docs` (Docs), makes Back and Forward work, and lets the Docs page load only when it's opened.
+
+**Why:** It's tiny (about +2 KB compressed), its API is close to React Router's (`Route`, `Link`, `Switch`, `useLocation`), and it covers everything two pages need. It's also a chance to try something new at little risk.
+
+**Checked before deciding** (2026-10-01):
+
+- **Alive:** version 3.13.0 released 2026-09-30, 8 releases in the last year, 9 people committing, 10 contributions merged in 90 days, 7.9k GitHub stars, 2.3M weekly downloads. Unlicense (public domain).
+- **Correct links:** its `Link` ignores clicks made with Ctrl, Cmd, Alt or Shift, or with anything but the left button (source, lines 277–281), so opening a tab in a new browser tab still works.
+- **Fits React Aria:** `useLocation()` returns a `navigate` function, which is what React Aria's links need to navigate without reloading the page.
+
+**Options considered:**
+
+- React Router (8.4, +14 KB, 65M weekly downloads): the standard every reviewer knows, but more than two pages need.
+- About 30 lines of our own: no dependency, but link clicks, Back/Forward and their edge cases would be ours to get right and test.
+
+## 31. The Docs tab renders Markdown with react-markdown
+
+**Decision:** The Docs tab (decision 20) renders the repo's Markdown with [react-markdown](https://github.com/remarkjs/react-markdown) 10 and its table plugin, remark-gfm, because our docs use tables.
+
+**Cost:** about +48 KB compressed, loaded only when someone opens the Docs tab, so the dashboard doesn't pay for it. 41M weekly downloads.
+
+**Why:** It's the standard way to show Markdown in React. It turns Markdown into React elements rather than raw HTML, so no HTML injection is involved.
+
+## 32. The Inter font ships with the app
+
+**Decision:** The design's fonts come from [Fontsource](https://fontsource.org/)'s `@fontsource-variable/inter` (version 5.3, 5.3M weekly downloads), bundled with our app and served from our own site. We use its optical-size edition, one variable font file (71 KB for Latin characters) that covers both:
+
+- **Inter**, for all regular text
+- **Inter Display**, for the 35px title. It isn't a separate font: it's Inter's version drawn for large sizes, and the browser switches to it automatically at large sizes.
+
+Only the Latin file downloads, because Fontsource splits the font by alphabet.
+
+**Why:** It's the design's exact font, from one file, with no outside services. Nothing contacts Google, it works behind strict company networks, and the browser caches it.
+
+**Options considered:**
+
+- Google Fonts: one line in the page, but every visitor's browser contacts Google, which companies increasingly avoid for privacy reasons, and the page depends on Google being reachable.
+- Each computer's built-in fonts: nothing to load, but the page would no longer match the design.
+
+## 33. Code-quality tools: strict TypeScript, ESLint and Prettier
+
+**Decision:**
+
+- **TypeScript** in its strictest mode.
+- **Node 24**, the current long-term-support version, which Vercel supports.
+- **ESLint** (a linter: it flags bugs and risky patterns) with typescript-eslint, which uses type information to catch real bugs such as a forgotten `await`, and the React team's Hooks rules.
+- **Prettier** (a formatter: it rewrites spacing and line breaks automatically, so style is never discussed).
+
+Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloads), Prettier 3.9 (158M), typescript-eslint 8.71 (104M), React Hooks rules 7.1 (113M).
+
+**One caveat:** the usual accessibility lint plugin (`eslint-plugin-jsx-a11y`, 55M weekly) hasn't had a release since October 2024. We check that it works with ESLint 10 during setup and drop it if it doesn't. React Aria and the automated accessibility checks in tests cover the same ground.
+
+**Why:** It's the standard reviewers expect, and the type-aware checks catch the bugs that matter most in our data-loading code.
+
+**Options considered:**
+
+- Biome (18.9M weekly): one fast tool for both jobs, with a simpler setup and built-in React and accessibility rules, but fewer rules and weaker type-aware checks.
+- Oxlint + Prettier (26.5M weekly for Oxlint): a very fast linter that re-implements ESLint's popular rules, but it's newer and its type-aware checks are still maturing.
+
+## 34. The README says how AI was used
+
+**Decision:** The README has a short, honest section on how AI was used, along these lines: "I used Claude Code as a pair: for research, drafting and code. Every decision was mine, and each one is recorded with its reasoning in the decisions docs. I reviewed and understand all of the code." The exact wording is settled at the final docs stage.
+
+**Why:** The brief says to use LLMs however you normally would, so using one is fine. Saying how answers the question before it's asked, and it points reviewers to the decisions docs as evidence of the human judgment they want to assess.
+
+**Options considered:**
+
+- Not mentioning it: allowed, but reviewers may wonder, and it would come up in the walkthrough anyway.
+- A detailed account (which parts were AI-written, the prompts used): very transparent, but long, and it shifts the focus from the result to the process.
