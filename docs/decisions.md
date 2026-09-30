@@ -461,7 +461,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 25. Styles are plain CSS modules
 
-**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables, in two layers (decision 41): raw values, and tokens named by purpose that note which Figma variable they come from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
+**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables: one layer, named by purpose, each noting which Figma variable it comes from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
 
 **Why:** Modern CSS has what we need built in, including nesting and variables. Vite supports CSS modules with no setup. That's one tool fewer to install, configure and explain.
 
@@ -760,10 +760,10 @@ Every other tool's current major version has been out for at least four weeks. T
 **Decision:** Our CSS follows a set of styling standards the repo owner uses in another project. We take them as good practice rather than rules to follow to the letter. The details are in the design doc (§5.8). We adopt:
 
 - **Units that respect the reader's text size:** rem for font sizes, spacing and widths; px only for borders, outlines and dividers; unitless line heights; no font size set on the page root.
-- **Two layers of tokens:** raw values, and tokens named by purpose. Components use only the purpose-named ones for colours, and never raw values.
-- **Closed `ui/` components:** no `className` or `style` props, and no outer margins (parents space children with `gap`).
+- **Tokens instead of raw values:** components use tokens (one layer, named by purpose) for colours and sizes, never raw values.
+- **Closed `ui/` components:** code that uses them can't restyle them. They accept no `className` or `style` props, and every allowed variation is an explicit option the component offers, such as `variant="secondary"`. Components have no outer margins; the parent's layout places them (e.g. with `gap`). This keeps every button looking like every other button, and when one looks odd, there's only one place to check. The cost is that a one-off need means adding an option. (Confirmed separately, after considering open components and a "`className` for placement only" middle ground.)
 - **React Aria states** styled through their data attributes, so hover doesn't stick after a tap on touch screens. Every state of every interactive component is styled and shown in the Components tab.
-- **Mobile-first layout:** rem media queries, container queries where a component depends on its own width, no fixed heights on text, long names wrap.
+- **Layout that doesn't break:** rem media queries, no fixed heights on text, long names wrap.
 - **Motion:** animate only `transform` and `opacity`, and keep non-essential motion off under reduced motion.
 - **Minimal global CSS,** and Lightning CSS so newer CSS syntax works in every supported browser.
 - **Accessibility details:**
@@ -777,6 +777,11 @@ Every other tool's current major version has been out for at least four weeks. T
 - `next/font` becomes Fontsource (decision 32).
 - Turbopack becomes Vite with Lightning CSS.
 - Storybook becomes our Components tab (decision 37).
+
+**Not adopted:**
+
+- **Two layers of tokens** (raw values plus purpose-named tokens pointing at them): one layer is enough for an app this size.
+- **Mobile-first layout:** the design is a desktop layout, and narrow screens only need to not break (decision 15). Base styles follow the desktop design, and a few media queries adjust narrow screens.
 
 **Deliberate deviations:**
 

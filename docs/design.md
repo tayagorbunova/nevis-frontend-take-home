@@ -276,18 +276,20 @@ Each has its examples file for the Components tab.
 
 ### 5.8 Styles (D25, D32, D39, D41)
 
-**Tokens** live in `styles/tokens.css` on `:root`, in two layers (D41):
+**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. Each notes the Figma variable it comes from (D25, D41):
 
-- **Base tokens** hold raw values, named by their place in a scale:
-  - colours: `--ink` (#141413) and its opacity steps `--ink-60`, `--ink-16`, `--ink-8` and `--ink-4`; `--paper` (#F7F5ED); `--white`; the chart palette `--lavender`, `--peach`, `--maroon`, `--sage`, `--mustard` (D17); a neutral grey
-  - type: Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25)
-  - spacing in rem (for example 0.5, 1, 1.125, 1.5 and 1.75rem, i.e. 8, 16, 18, 24 and 28px)
-  - radii (2, 4, 8px), the 1px border, the 2px focus outline, motion durations
-- **Semantic tokens** name a purpose and point to a base token. Components use only these for colours, and each notes the Figma variable it comes from:
-  - `--color-text` and `--color-text-muted`: Content/Primary, and Content/Secondary at 60%
-  - `--color-border` (Outline/Line solid at 8%), `--color-gridline` (Outline/Line dotted at 16%), `--color-row-hover` (Surface/Secondary at 4%)
-  - `--color-page` (Background/Primary), `--color-card` (Background/Secondary)
-  - `--color-chart-1` … `--color-chart-5`, `--color-chart-other`, and `--focus-ring`
+- **Colours:**
+  - `--color-text`: #141413, Content/Primary
+  - `--color-text-muted`: the ink at 60%, Content/Secondary
+  - `--color-border`: the ink at 8%, Outline/Line solid
+  - `--color-gridline`: the ink at 16%, Outline/Line dotted
+  - `--color-row-hover`: the ink at 4%, Surface/Secondary
+  - `--color-page`: #F7F5ED, Background/Primary
+  - `--color-card`: #FFFFFF, Background/Secondary
+  - `--color-chart-1` … `--color-chart-5` (D17) and `--color-chart-other`, a neutral grey
+- **Type:** Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25).
+- **Spacing** in rem, for example 0.5, 1, 1.125, 1.5 and 1.75rem (8, 16, 18, 24 and 28px).
+- **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), motion durations.
 - **Figma's px values become rem** (px ÷ 16), so the layout grows with the reader's text size. For example, the 264px name column becomes 16.5rem, and the 56px row becomes a 3.5rem *minimum* height. Borders, outlines and dividers stay in px.
 
 **Rules for component CSS** (D41):
@@ -297,7 +299,7 @@ Each has its examples file for the Components tab.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
 - Every state of every interactive component is styled and shown in the Components tab.
-- **Mobile first:** base styles describe the narrowest layout, and `min-width` media queries in rem add to it (we expect one or two, e.g. `48rem`). Container queries apply where a component depends on its own width, such as the chart shortening its month labels.
+- **Desktop first:** base styles follow the design's desktop layout, and a few media queries in rem adjust narrow screens: the dropdown moves under the title, the top bar wraps, and the table scrolls sideways (D15). The chart shortens its month labels based on its own width, which Recharts reports.
 - Elements containing text get no fixed height (minimum height plus padding instead), long names wrap, and flex or grid children that hold text can shrink.
 - Only `transform` and `opacity` are animated, with the properties listed explicitly (never `transition: all`). Non-essential motion lives inside `@media (prefers-reduced-motion: no-preference)`. The row hover shade appears instantly.
 - Global CSS holds only the reset, the tokens, the font and base element styles.
