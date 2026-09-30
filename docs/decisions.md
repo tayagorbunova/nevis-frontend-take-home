@@ -402,7 +402,7 @@ Screen readers get the caption as part of the chart's description. They aren't i
 
 **Decision:** A slim bar at the very top of the page, above the design:
 
-- On the left, two tabs: "Dashboard" and "Docs".
+- On the left, the tabs: "Dashboard" and "Docs", plus "Components" (added by decision 37).
 - On the right, the demo switches (decision 11), shown only on the Dashboard tab.
 - On phones, the bar wraps onto two lines.
 
@@ -627,3 +627,130 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 - Not mentioning it: allowed, but reviewers may wonder, and it would come up in the walkthrough anyway.
 - A detailed account (which parts were AI-written, the prompts used): very transparent, but long, and it shifts the focus from the result to the process.
+
+## 35. The API: one address, one answer shape, one error shape
+
+**Decision:**
+
+- **One address:** `GET /api/client-counts?period=…`. It's named after the glossary's "client count"; `/api/clients` would suggest a list of client records.
+- **`period`** is one of `last-12-months` (the default), `last-6-months`, `last-3-months` or `last-month`. The list lives in `packages/contract`, so the server's check and the page's dropdown can never disagree.
+- **The answer (200):** `{ "months": [...], "company": {...} }`. `months` lists the months covered, and every row's `values` is trimmed to exactly those months, in the same order. `company` is the brief's payload, plus Anna's `avatarUrl` (decision 16).
+- **Errors** share one shape, `{ "error": { "code", "message" } }`: 400 with `invalid_period` for an unknown period, and 500 with `internal_error` when something breaks or the demo "fail" switch is on. The page shows its own friendly message; the server's message is for developers.
+- **Demo notes** travel in a request header, `X-Demo: slow`, `fail`, or both. "slow" waits 2 seconds and "fail" answers with a 500. The server only listens when its `DEMO_MODE=true` setting is on (locally, and on the hosted demo).
+- **No caching:** answers carry `Cache-Control: no-store`, so every request really reaches the server. Otherwise a cached answer could hide a switched-on demo.
+- **On the server:** the data file is the brief's payload, copied exactly, plus Anna's `avatarUrl`. The first month (`2024-02`) sits next to it as a setting, because the payload has no dates. Picking the months is one small, pure function. Anna's photo is served as a static file by the page's hosting.
+
+**Why the demo notes are a header:** they must apply to one request from one browser. On the hosted demo, several reviewers may be using the page at once, and one person's "fail" must not break it for others. A header does that, and keeps the API's address limited to real parameters. Headers are the usual place for information about a request, as opposed to what's being requested.
+
+**Options considered for the demo notes:**
+
+- A parameter in the address (`&demo=fail`): also per request and easy to try by hand, but it mixes a debug instruction into the real API's address.
+- A cookie: sent automatically, but it's hidden, sticky state that affects every request.
+- A switch stored on the server: nothing to send with each request, but it would affect every visitor at once.
+
+## 36. Few, meaningful tests (provisional)
+
+**Decision (to be revisited):** A small set of about 10–12 tests, each tied to a realistic bug it would catch, following [testing-strategy.md](testing-strategy.md), which also holds the research behind it. In short:
+
+- Test what the user sees and does; fake only the network (MSW); never mock our own code.
+- Mostly whole-app tests in Vitest's simulated browser, a few API tests, at most one pure-function test (what the chart shows), and one or two real-browser tests with Playwright, written last.
+- Expected values are literal numbers from the brief's data, never computed with our own code.
+- Every test is seen failing once, by breaking one line on purpose.
+- The list is agreed before tests are written, and nothing is added without a reason.
+
+**Why:** It follows what experienced developers recommend, and it guards against the known problems with AI-written tests: tests that restate the code, tests that can't fail, and too many tests.
+
+**Open questions:** whether server tests are in scope for a frontend assignment (the whole-app tests already run through the real server logic), and whether the list is right. Both are revisited before tests are written.
+
+**Options considered:**
+
+- Unit and component tests only: covers the brief, but real-browser behaviour (layout at 375px, real focus) goes unchecked.
+- Real-browser tests only: closest to real use, but slow, and small pieces of logic can't be tested on their own.
+
+## 37. A "Components" tab shows our UI components
+
+**Decision:** A third tab, "Components" (`/components`), between Dashboard and Docs. It's a gallery page that shows each component from our own small design system (`ui/`) in its main states, with small sample data, for example:
+
+- the table with rows open and closed, and a row with nothing inside
+- the chart with one, three and five colours
+- the avatar with a photo and with initials
+- the dropdown and the switches
+
+It loads only when opened. Each component's examples sit in one file next to it (e.g. `TreeTable.examples.tsx`), written in the same shape as Storybook stories: a named example that renders the component in one state.
+
+**Why:** Reviewers see the design-system side of the work inside the app, with no extra tools to install, build or host. Nevis's job ad mentions shaping a design system.
+
+**Later:** "Move the examples to Storybook" is a README follow-up. Because the examples are written story-style, that's mostly copying.
+
+**Options considered** (checked 2026-10-01):
+
+- Storybook 10, the industry standard (26.9M weekly downloads, 91k stars, released 2026-09-29): stories, live controls, a per-story accessibility checker, documentation pages, and stories that can run as tests. It can be served from the same deployment (e.g. under `/storybook/`), but it's still a separate app, with its own build, setup, dependencies and interface; our tab would open it or embed it in a frame. It pays off for a team with dozens of components, and it's heavy for our eight or so.
+- Ladle: a lighter Storybook-like tool using the same story format, but used far less (345K weekly) and last released 11 months ago.
+
+## 38. Component APIs: one rule for choosing the style
+
+**Problem:** The brief asks for component APIs "the way you would on a real team: composable, with clear boundaries". There are two common styles: compound components (a set of parts you assemble, like HTML's `<table>`, `<tr>`, `<td>`) and props (one component configured with data).
+
+**Decision:** One rule decides the style:
+
+| When | Style | Our components |
+|---|---|---|
+| The user of the component assembles its structure | Compound parts | `NavTabs` (`NavTabs.Link` for each tab) |
+| The component is driven by data | Props with render functions | `TreeTable` (columns described as data), `StackedColumnChart` (`renderLabel`) |
+| A simple control or container | Plain props | `Select`, `Switch`, `Avatar`, `Skeleton`, `Card`, `Button` |
+
+**`TreeTable` in practice:** the feature describes each column once, with its header and a `cell` function for drawing that column's cell. `TreeTable` handles the tree itself: the recursion into children, chevrons only on rows that can open, indentation, ignoring clicks on rows without children, and the pinned first column.
+
+```tsx
+<TreeTable
+  label="Client counts per month"
+  rows={[tree]}
+  getRowId={(row) => row.id}
+  getChildren={(row) => row.children}
+  openRowIds={openRowIds}
+  onRowOpenChange={onRowOpenChange}
+  columns={[
+    { id: 'name', header: 'Name', hideHeader: true, isRowHeader: true, cell: (row) => <RowName row={row} /> },
+    ...months.map((month, i) => ({ id: month, header: formatMonth(month), align: 'end', cell: (row) => formatCount(row.values[i]) })),
+  ]}
+/>
+```
+
+It stays generic, knowing nothing about clients, and TypeScript checks that every `cell` function receives the right row type.
+
+**Why:** Our rows are all alike (a name, then one number per month), so columns described as data fit naturally. That's the usual shape for data tables (TanStack Table, AG Grid, MUI's Data Grid). The recursion lives once inside `ui/`, instead of in every feature that uses the table. The `cell` functions keep it composable: the feature decides what goes inside each cell, such as the avatar.
+
+**Options considered:**
+
+- A compound `TreeTable` (`TreeTable.Header`, `.Column`, `.Body`, `.Row`, `.Cell`, `.ChildRows`): anything goes, but every feature would write the tree recursion itself, which is React Aria's way of thinking leaking out of `ui/`.
+- Compound everywhere: maximum flexibility, but simple controls like a switch become verbose to use.
+- Plain props everywhere, without render functions: short to use, but every new need becomes another special-case prop.
+
+## 39. The page's details that Figma doesn't cover
+
+**Decision (approved as defaults, may be revisited):**
+
+- **Layout, following the design:** the top bar, the title row ("Clients" with the period dropdown on the right), the chart card (caption, chart, legend), then the table card. The page fills the window with the design's 16px side padding, and on very wide screens the bars stop growing at the design's width.
+- **New elements, styled from the design's colours, fonts and corners:**
+  - Top bar: a white strip with a thin bottom border. Tabs are text links, the current one in full ink with a 2px underline and the others at 60%. The demo switches sit on the right.
+  - Chart label: a small white card with a thin border and 8px corners, listing the month, each part with its colour square and number, and the total.
+  - Loading placeholders: light grey blocks shaped like the page, with a gentle pulse.
+  - Error: "Couldn't load clients" and a "Try again" button (a `Button` in `ui/`), replacing the chart and table.
+  - Keyboard focus: a 2px outline in the ink colour.
+- **Behaviour defaults:**
+  - Every row gets the design's hover shade (a reading aid across 12 columns), but only rows that can open show the "clickable" hand cursor.
+  - Numbers have thousands separators, and months read "Feb 2024" ("Feb" on phones, decision 15).
+  - The chevron turns smoothly and the chart's bars move briefly when they change. With the system's "reduce motion" setting on, nothing animates.
+  - Browser tab titles: "Clients · Nevis home task", with matching titles for Components and Docs.
+  - The code survives cases our data doesn't have: a company with no branches shows the company row alone, and a row with nothing to split shows a single colour.
+
+**How new components get their look:** any component without a Figma design (the top bar and tabs, the dropdown, the switches, the chart label, the placeholders, the error state, the button) first gets a visual mockup of all its states, made by an agent. It's built only after Taya approves the mockup.
+
+## 40. Versions: current releases, with two deliberate exceptions
+
+**Decision:** Use the current stable release of everything, as checked on 2026-10-01, with two exceptions:
+
+- **TypeScript 6.0.3, not 7.0.** TypeScript 7 is the new compiler rewritten in Go, but typescript-eslint (decision 33) supports only TypeScript below 6.1 so far. Its type-aware checks are the reason we chose it, so we stay on 6.0, the last release before the rewrite, which follows the same language rules. Upgrading is a README follow-up for when typescript-eslint supports 7.
+- **MSW 2.15, not 3.0.** MSW 3.0 came out on 2026-09-28, three days before this decision. In a time-boxed project, a brand-new major version is an avoidable risk: fresh bugs, and docs and examples still catching up. 2.15 has been stable since July.
+
+Every other tool's current major version has been out for at least four weeks. The full list is in the design doc.
