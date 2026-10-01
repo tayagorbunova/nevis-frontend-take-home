@@ -204,12 +204,19 @@ When a switch is on, the app adds a note to each request, and the server really 
 - Render: runs a normal, always-on Node.js server, but the free plan falls asleep after 15 minutes without visitors, and the next visit waits up to a minute.
 - Netlify: very similar to Vercel, with no real advantage for us.
 
-**Update (2026-10-01, the setup that worked):** checked on a pull request's preview before any features existed: `/`, a direct visit to `/docs`, and `/api/client-counts`.
+**Update (2026-10-01, the setup that works):** checked on pull request previews: `/`, a direct visit to `/docs`, and `/api/client-counts`.
 
-- **One small file is the Vercel function:** `api/client-counts.ts`, in a top-level `api/` folder. It imports the Hono app from `apps/api` and exports it. Vercel only looks for functions in that folder, and the file's path becomes the address. Our real API code stays in `apps/api`.
-- **`vercel.json`** says how to build, where the built page is, and that every address outside `/api/` gets the page, because the app handles `/components` and `/docs` itself.
+- **The API is bundled for hosting.** Its `build` script uses esbuild to pack the whole API into one JavaScript file: our code, the shared contract, Hono, Zod and the data. Vite does the same for the page, so each app ships as one self-contained output.
+- **One small file is the Vercel function:** `api/client-counts.js`, in a top-level `api/` folder. It imports the bundle and exports the app. Vercel only looks for functions in that folder, and the file's path becomes the address. Our real API code stays in `apps/api`.
+- **`vercel.json`** says how to build, where the built page is, and that every address outside `/api/` gets the page, because the app handles `/components` and `/docs` itself. It also names the build command and sets no framework preset, although Vercel's "Other" preset does the same: when the repo was imported, Vercel pre-selected its "Services" preset, and these two lines keep the repo's own setup in charge.
 - **No adapter library.** Hono's Vercel adapter is deprecated, and Vercel accepts the app itself.
-- **Server-side imports name the real file,** with its `.ts` ending (`./app.ts`). Vercel compiles the function's TypeScript files one by one and ships only JavaScript, so those imports have to be renamed to `.js` on the way. One TypeScript setting does that (`rewriteRelativeImportExtensions`). Vercel turns it on by itself only with TypeScript 7, and we're on 6.0, so we set it. The page's code keeps imports without endings, because Vite bundles it.
+
+**Why the bundle:** the shared contract package exposes its TypeScript source, with no build step of its own. Vercel compiles a function's TypeScript files one by one and ships only the JavaScript, so on Vercel the package still pointed at a `.ts` file that wasn't there. The function would have crashed on its first request, with no error in the build. Turborepo's docs state the rule: a package like this "can only be used when the package is going to be used in tooling that uses a bundler or natively understands TypeScript". The page has Vite; the bundle gives the API the same.
+
+**Options considered for that problem:**
+
+- The server imports the contract by file path: two lines, but it reaches into another package, and it leaves hosting workarounds in the source (file endings in imports, and a TypeScript setting to rename them).
+- The contract gets its own build step (a "compiled package"): the route Turborepo's docs name for consumers without a bundler, but the contract would then have to be built before the apps can run locally.
 
 **Also considered: Vercel's "Services" mode.** Vercel offered it when the repo was imported. It deploys each app in the monorepo as its own service and needs no file in `api/`. It's in beta, and we couldn't check ahead how it builds our TypeScript. For a demo that has to work on the day, we chose the long-standing setup.
 
@@ -632,7 +639,7 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 **Update (2026-10-01, the scaffold):** what the tooling does beyond the presets, and why:
 
-- **No comments in the code,** config files included. The code has to be clear by itself, so reasons like the ones below live here.
+- **No comments in the code,** config files included. The code has to be clear by itself, so reasons like the ones below live here. The one exception is the demo behaviour in the API, which has a comment because that code exists only for reviewers.
 - **Three rules from typescript-eslint's strict presets are adjusted:**
   - Object shapes are written with `type`, never `interface`, so there's one convention.
   - Numbers are allowed inside template strings, because they're safe there. The preset's other options for that rule are listed in full, because ESLint replaces a rule's options instead of merging them.

@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { createApp } from "./app.ts";
+import { createApp } from "./app";
 
 const app = createApp();
 

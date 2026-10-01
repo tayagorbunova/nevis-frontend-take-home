@@ -31,9 +31,8 @@ Every task follows these, on top of its own requirements.
   - Only `src/ui/` imports `react-aria-components`, `react-aria` and `recharts`.
   - `src/ui/` never imports from `src/features/` or `src/app/`.
   - Only data-loading code (`features/*/api/`) calls `fetch`.
-- **Imports:** server-side code (`apps/api`, `api/`, `packages/contract`) names the real file in relative imports (`./app.ts`), because Vercel compiles those files one by one (D12). The web app's imports have no file endings.
 - **The UI only presents (Principles, D4, D7):** a total shown anywhere is a row's own number from the server, and months come from the server's answer. Nothing is summed, fixed or assumed.
-- **Words (D6):** our code says "advisor" and "channel". Only the contract and `toClientTree` mention `employees` and `channels`.
+- **Words (D6):** the page's code says "advisor" and "channel", and only `toClientTree` reads `employees` and `channels` there. The contract and the server use the API's own field names.
 - **Styles (§5.8, D41):**
   - use tokens only, and rem units (px only for borders, outlines and dividers)
   - `ui/` components are closed: no `className` or `style` props, no outer margins
@@ -41,7 +40,7 @@ Every task follows these, on top of its own requirements.
   - animate only `transform` and `opacity`, with motion off under reduced motion
 - **Components without a Figma design** follow the mockup approved in Task 5.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
-- **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers.
+- **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers. A comment goes in only where the repo owner asks for one; so far that's the demo behaviour in the API.
 - **Nothing for problems that don't exist yet:** no defensive code for cases that can't happen, and no rules or settings without a use today. A review finding becomes a change only if it fixes something broken or visible today, or makes the code simpler.
 - **Tests:** none before Task 15, where the list is agreed with the repo owner and then written.
 - **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm run build` (plus the tests, once Task 15 adds them), then a commit with a conventional message.
@@ -162,11 +161,11 @@ Every task follows these, on top of its own requirements.
 - [ ] Record what worked as a short update under D12.
 - [ ] Commit `chore: deploy to Vercel`.
 
-**What we learned** (from Vercel's build code and the preview):
+**What we learned** (from Vercel's build code and the previews):
 
-- Vercel compiles a function's TypeScript files one by one and ships only the JavaScript. With TypeScript 6 it doesn't rename `.ts` imports by itself, which is why `rewriteRelativeImportExtensions` is set.
-- **For Task 3:** a workspace package whose entry is a `.ts` file will probably fail at runtime on Vercel, because the package still points at the `.ts` file after it has been compiled to `.js`. If the preview shows that, bundle the function into one file during the build.
-- **For Task 4:** in server-side code, the JSON data import needs `with { type: "json" }`.
+- Vercel compiles a function's TypeScript files one by one and ships only the JavaScript.
+- A workspace package whose entry is a `.ts` file then fails at runtime: the package still points at the `.ts` file after it has been compiled to `.js`. The build shows no error.
+- So Task 4 bundles the API with esbuild, and the function file became `api/client-counts.js`, which imports the bundle (D12). The root `tsconfig.json`, the `.ts` endings in server imports and `rewriteRelativeImportExtensions` from this task were removed again.
 
 ### Task 3: The contract
 
@@ -213,6 +212,7 @@ Every task follows these, on top of its own requirements.
 - `client-counts.json` is the payload from the brief (`private/Nevis Frontend Home Assignment.pdf`), copied exactly, plus `"avatarUrl": "/avatars/anna-blackwood.jpg"` on Anna Blackwood (D16).
 - `app.ts` stays runtime-neutral, because the web app's tests may run it too: no `node:` imports, and a `setTimeout` promise for the 2-second wait. `server.ts` is the only Node-specific file.
 - One middleware sets `Cache-Control: no-store` on every answer. Error bodies are checked against the contract with `satisfies ApiErrorBody`.
+- The API's `build` script bundles it into `dist/app.js` with esbuild, and `api/client-counts.js` imports that bundle (D12).
 - `selectPeriod`:
   - lists the months from `FIRST_MONTH` and the number of values
   - keeps the last 12, 6, 3 or 1
