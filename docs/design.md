@@ -145,7 +145,7 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
 - **`NavTabs` uses wouter's own `Link`,** which handles Cmd/Ctrl-click and accepts `aria-current`. React Aria's `Link` doesn't accept `aria-current` (checked in its types), and no other React Aria links are used, so React Aria's router integration isn't needed.
 - **The top bar** holds `NavTabs` (Dashboard, Components, Docs) on the left and `DemoSwitches` on the right, shown only on the Dashboard tab. On narrow screens it wraps onto two lines.
 - **Browser tab titles:** "Clients · Nevis home task", "Components · Nevis home task" and "Docs · Nevis home task".
-- **Favicon:** our own small SVG icon in the design's style (D39).
+- **Favicon:** our own small SVG icon: three rising columns, each stacked in the first three chart colours (D39).
 
 ### 5.3 Page state (D28, section 1 of the design review)
 
@@ -202,7 +202,7 @@ Everything else is worked out from these two values, never stored. The data itse
 
 | State | What's on screen |
 |---|---|
-| First load (no data yet) | Placeholders shaped like the title row, the chart and the table |
+| First load (no data yet) | The real title and dropdown, and placeholders shaped like the chart card and the table card |
 | Error (any kind, even if older numbers exist) | "Couldn't load clients" and a "Try again" button (`refetch`), in place of the chart and table. While the retry runs, the button shows it's busy. |
 | Refreshing: a request runs while numbers are on screen (a new period, a demo switch, a return to a period already seen) | The numbers on screen faded, and a small spinner next to the dropdown, which already shows the new choice |
 | Loaded | The chart and table |
@@ -232,7 +232,7 @@ Each has its examples file for the Components tab.
   - rows without children ignoring clicks and Enter (the gotcha found in testing, D13)
   - reporting which row opened or closed
   - the visually hidden header label (D14)
-  - the pinned first column and the sideways scrolling on narrow screens (D15)
+  - the pinned first column and the sideways scrolling when the months don't fit (D15, §5.9)
 - **Keyboard** behaviour comes from React Aria (D14).
 - **Figma values:**
   - rows are 56px high, with padding 18/24/18/16
@@ -255,7 +255,7 @@ Each has its examples file for the Components tab.
   - columns stop growing at the design's width on very wide screens
 - **Keyboard:** Recharts' built-in layer gives one Tab stop and ← / → between months. We add Escape to hide the label, by controlling whether the label shows (to be confirmed with a quick test).
 - **The label** is rendered by the feature through `renderLabel`, inside a region marked `role="status"` with polite announcements. Recharts adds announcements only to its default label, so we add them ourselves (D29).
-- **Narrow screens:** month labels shorten to "Feb", with the year shown once (D15).
+- **Narrow screens:** month labels shorten to "Feb", with the year only on the first month and on January, and labels that don't fit are left out (D15).
 
 ### 5.7 Feature components
 
@@ -320,6 +320,72 @@ Each has its examples file for the Components tab.
 - The faded "new period loading" state and the placeholders' pulse use opacity.
 - The chart's columns move briefly on change. That's a small SVG, so it's cheap to repaint.
 - All of it is off under reduced motion.
+
+### 5.9 The look of the new elements (approved 2026-10-01)
+
+Figma covers the title, the chart card and the table card. Everything else was mocked up in all its states and approved by the repo owner (D39). The mockup itself is a local working file and isn't in the repo; these are its values. "Ink" is `#141413`.
+
+**Extra tokens:**
+
+- `--color-control-border`: ink at 16%, the line around controls and floating cards. Figma's own line (ink at 8%) nearly disappears on a white control inside a white card.
+- `--color-tint`: ink at 8%, for the initials circle, the placeholders and inline code.
+- `--color-pressed`: ink at 8%.
+- `--color-switch-off`: ink at 60%.
+- `--shadow-floating`: `0 0.25rem 1rem` in ink at 10%, only for things that float.
+- `--opacity-refreshing`: 0.6.
+- `--control-height`: 2.25rem (36px).
+- `--color-chart-other`: `#c7c7c6`.
+- Motion: 150ms for small changes, 800ms per spinner turn, 1s per placeholder pulse.
+
+**Top bar and tabs:**
+
+- A white strip, at least 3rem high, with 1rem side padding and a 1px line below.
+- Tabs are 14/20 text links, 1.5rem apart, each as high as the bar.
+- The current tab is full ink with a 2px ink underline on the bar's bottom edge. The others are ink at 60%, and full ink on hover.
+- Keyboard focus is a 2px ink outline around the word.
+- The demo group sits on the right in 12/16 text: the label "Demo settings" at 60% ink, then the two switches.
+
+**Switch:**
+
+- A 1.75 × 1rem pill with a 0.75rem white thumb. Off is ink at 60%, which meets the 3:1 contrast rule for controls; on is full ink.
+- Hover adds a 3px ring in ink at 16%. Focus is the 2px ink outline, 2px away.
+
+**Period dropdown:**
+
+- The control is white, at least 10rem wide and 2.25rem high, with the control border, 0.5rem corners, 14/20 text and a 16px down chevron drawn like the table's.
+- Hover, and while open: the row-hover shade.
+- The list floats 0.25rem below, as wide as the control, with the floating shadow. Options are 2.25rem high; the selected one has a check mark, the one under the pointer gets the row-hover shade, and the one under the keyboard also gets the focus outline.
+
+**Spinner:** a 1rem ring with a 1.5px line; a quarter of it is ink at 60% and the rest much fainter. It turns once per 0.8s and stands still under reduced motion. It sits 0.75rem from the dropdown, placed so the dropdown doesn't move when it appears.
+
+**Button:** white, at least 2.25rem high, with the control border and 0.5rem corners. Hover is the row-hover shade, pressed is ink at 8%, and busy shows the spinner before the label.
+
+**Chart label:**
+
+- A white card, at least 10.5rem wide, with the control border, 0.5rem corners, 0.75rem padding and the floating shadow.
+- It lists the month (12/16 at 60% ink), the row's own total (14/20), then each part: its 8×8 colour square, its name at 60% ink and its number in full ink, right-aligned in tabular figures.
+- The active column gets a band in the row-hover shade behind it, as high as the plot.
+
+**Avatar initials:** 9px text at weight 500 in full ink, on ink at 8%.
+
+**First load:** the title and dropdown are real. The chart and table are white cards holding grey blocks (ink at 8%, 0.25rem corners) that fade gently, sized so nothing jumps when the data arrives.
+
+**Refreshing:** the chart and table cards at 60% opacity, with the spinner by the dropdown.
+
+**Error:** one white card with "Couldn't load clients" and the "Try again" button below it, centred, with 4rem of padding above and below.
+
+**Components page:** a "Components" title, then one section per component: its name at 20/28, and its examples in a grid of white cards, each with a 12/16 caption at 60% ink above it.
+
+**Docs page:** one readable column, at most 44rem wide. Text is 16/26, the title 35/44, headings 20/28 at weight 600. Links are underlined. Tables are 14px with thin row lines and scroll inside their own box.
+
+**The table when space is tight:**
+
+- A month column never gets narrower than 4rem (64px). When "Feb 2024" doesn't fit on one line, the header wraps to "Feb" over "2024". So all twelve months fit without sideways scrolling down to a window about 1100px wide; below that the table scrolls inside its card, with the names pinned.
+- Below 40rem (640px), the name column is 10.5rem (168px) with a 1px line on its right edge, indents are 0.5rem per level, and names may wrap onto two lines. At 375px that shows two whole months and part of a third, which hints at the scrolling.
+
+**The rest of the page below 40rem:** the top bar wraps onto two lines (tabs, then the demo group), the dropdown sits under the title, and the chart's columns are 0.5rem apart.
+
+**Favicon:** three rising columns on a 16 × 16 grid, each stacked in lavender, peach and maroon.
 
 ## 6. Accessibility summary
 

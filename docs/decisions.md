@@ -792,6 +792,15 @@ It stays generic, knowing nothing about clients, and TypeScript checks that ever
 
 **How new components get their look:** any component without a Figma design (the top bar and tabs, the dropdown, the switches, the chart label, the placeholders, the error state, the button) first gets a visual mockup of all its states, made by an agent. It's built only after the repo owner approves the mockup.
 
+**Approved (2026-10-01):** the mockup was reviewed and approved. It was a local working file and isn't in the repo; its values are recorded in the design doc (§5.9). The choices made at that review:
+
+- **Favicon:** three rising columns, each stacked in the first three chart colours. It reads on light and dark browser tabs; plain lavender columns were too faint on a white tab.
+- **The switch's "off" position** is ink at 60%. The paler version looked calmer but failed the 3:1 contrast rule for controls.
+- **The demo group's text** is 12px, so it fits on one line under the tabs on a phone.
+- **On first load,** the title and the dropdown are real straight away, because they don't need data. Only the chart and table get placeholders.
+- **When the months don't fit,** their headers wrap onto two lines ("Feb" over "2024") before the table starts scrolling sideways. That keeps all twelve months visible on laptop-sized windows.
+- **On phones,** the pinned name column is narrower (168px) with small indents, so two whole months show beside the names.
+
 ## 40. Versions: current releases, with two deliberate exceptions
 
 **Decision:** Use the current stable release of everything, as checked on 2026-10-01, with two exceptions:

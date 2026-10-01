@@ -38,7 +38,7 @@ Every task follows these, on top of its own requirements.
   - `ui/` components are closed: no `className` or `style` props, no outer margins
   - React Aria parts are styled through their state attributes; `:hover` appears only inside `@media (hover: hover)`
   - animate only `transform` and `opacity`, with motion off under reduced motion
-- **Components without a Figma design** follow the mockup approved in Task 5.
+- **Components without a Figma design** follow the look approved in Task 5, recorded in §5.9. The mockup itself was a local working file and isn't in the repo.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
 - **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers. A comment goes in only where the repo owner asks for one; so far that's the demo behaviour in the API.
 - **Nothing for problems that don't exist yet:** no defensive code for cases that can't happen, and no rules or settings without a use today. A review finding becomes a change only if it fixes something broken or visible today, or makes the code simpler.
@@ -234,7 +234,7 @@ Every task follows these, on top of its own requirements.
 
 **Delivers:** an approved look for everything Figma doesn't cover (D39).
 
-- [ ] Dispatch an agent to build `docs/mockups/new-components.html`: plain HTML and CSS with the design's tokens (§5.8), showing every state of:
+- [ ] Dispatch an agent to build a mockup page, kept locally and not committed: plain HTML and CSS with the design's tokens (§5.8), showing every state of:
   - the top bar: the tabs (current, other, hover, keyboard focus) and the demo switches (off, on, hover, focus)
   - the period dropdown (closed, open with the selected option, focus) and the spinner next to it
   - the button: default, hover, pressed, focus, busy
@@ -245,7 +245,7 @@ Every task follows these, on top of its own requirements.
   - the dashboard at 375px
   - the favicon: our own small icon in the design's style, shown at browser-tab size
 - [ ] Show it to the repo owner and adjust it until they approve.
-- [ ] Commit `docs: add the approved mockup of the new components`. Tasks 6–14 follow it.
+- [ ] Record the approved values in §5.9 and the choices in D39. Tasks 6–14 follow them.
 
 ### Task 6: Styles, the app shell and the gallery
 
@@ -267,7 +267,7 @@ Every task follows these, on top of its own requirements.
 - `NavTabs` and `NavTabs.Link` (§5.6), built on wouter's `Link`. A link gets `aria-current="page"` when the location equals its `href`.
 - The examples format: `type ExamplesMeta = { title: string }`. Each `*.examples.tsx` exports `meta` and one named component per state, like Storybook stories. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
 - Browser tab titles (§5.2) with React 19's `<title>`. Check which title wins over the one in `index.html`, and remove that one if needed.
-- The favicon from the approved mockup (D39).
+- The favicon from the approved mockup: three rising columns, each stacked in the first three chart colours (§5.9).
 
 **Steps:**
 
@@ -337,6 +337,10 @@ type TreeTableProps<Row> = {
   - `scroll-padding-inline-start` equals the name column's width. Check that a focused month cell never hides behind the pinned column (WCAG 2.4.11).
 - **Row hover:** plain `:hover` inside `@media (hover: hover)`. React Aria marks hover only on rows with an action, and every row gets the reading-aid shade (D39). Only rows with children get the hand cursor.
 - The Figma values are in §5.6: 56px rows, padding 18/24/18/16, a 264px name column, 1px borders, the chevron's path and rotation.
+- **Found while mocking it up:**
+  - An outline on a focused row is hidden under the pinned name cell, in every browser. Draw the focus ring from the pinned cell instead, as wide as the scrolling box.
+  - Month headers wrap onto two lines when a column gets too narrow, and a month column is never narrower than 4rem (§5.9).
+  - Below 40rem, channel rows need 1.25rem more indent than the level alone gives, or their names start left of the advisor's name.
 - Examples: closed, opened, a row with nothing inside, a very long name, and many columns in a narrow box.
 
 **Steps:**
@@ -377,7 +381,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 - **Escape:** a wrapper `onKeyDown` marks the label as dismissed, which passes `active={false}` to `Tooltip`. Any other key, or a pointer move, clears it.
 - **Announcements:** Recharts announces only its default label. So an always-present, visually hidden `role="status"` region holds the active month's label. Take the active month from Recharts 3's hooks (e.g. `useActiveTooltipLabel`) or from the tooltip content, whichever stays simpler.
 - **Colours:** bars use `var(--color-chart-n)`. Check that this works as an SVG fill in Chrome, Firefox and Safari.
-- **Narrow screens:** use the short labels when the plot is too narrow for the long ones; check at 320px and 375px.
+- **Narrow screens:** use the short labels when the plot is too narrow for the long ones; check at 320px and 375px. The design's 24px between columns can't fit at 375px, so the columns are 0.5rem apart there (§5.9).
 - **The legend** is an HTML list below the chart, hidden when there's only one series, since the title already names it.
 - **Examples:** one, three and five series, and a narrow box.
 
@@ -453,7 +457,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
   - `localStorage` (key `nevis-demo-settings`) is the only store
   - the parsed value is cached by its raw text, so React gets the same object until something changes
   - a blocked or malformed store reads as both switches off
-- `DemoSwitches`: a group labelled "Demo settings", with the switches "Slow responses" and "Fail requests". A change saves the settings and calls `queryClient.invalidateQueries()`, so the current data reloads at once.
+- `DemoSwitches`: a group labelled "Demo settings", with the switches "Slow responses" and "Fail requests", in 12/16 text so it fits on one line under the tabs on a phone (§5.9). A change saves the settings and calls `queryClient.invalidateQueries()`, so the current data reloads at once.
 
 **Steps:**
 
