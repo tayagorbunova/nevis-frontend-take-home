@@ -122,7 +122,7 @@ Every task follows these, on top of its own requirements.
   - `eslint-plugin-react-hooks` recommended, for the web app
   - `no-restricted-imports` rules for the boundaries in the Global constraints
   - no formatting rules: Prettier formats
-- Prettier: `singleQuote: true`, `printWidth: 100`. It ignores `package-lock.json`, `dist`, `coverage` and `private`.
+- Prettier: `printWidth: 100`, and its defaults for everything else, including double quotes. It ignores `package-lock.json`, `dist`, `coverage`, `private` and the Markdown docs.
 - CI runs on `pull_request`: `actions/setup-node` with the version from `.nvmrc` and the npm cache, `npm ci`, then `typecheck`, `lint`, `format:check` and `build`.
 
 **Steps:**
