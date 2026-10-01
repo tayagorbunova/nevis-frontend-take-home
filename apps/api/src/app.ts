@@ -1,9 +1,9 @@
-import { Hono } from 'hono';
+import { Hono } from "hono";
 
 export function createApp() {
   const app = new Hono();
 
-  app.get('/api/client-counts', (c) => c.json({ ok: true }));
+  app.get("/api/client-counts", (c) => c.json({ ok: true }));
 
   return app;
 }
