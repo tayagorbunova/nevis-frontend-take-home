@@ -1,13 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import "@fontsource-variable/inter/opsz.css";
+import "./styles/tokens.css";
+import "./styles/global.css";
+
+import { App } from "./app/App";
+
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("index.html has no #root element");
 
 createRoot(rootElement).render(
   <StrictMode>
-    <main>
-      <h1>Clients</h1>
-    </main>
+    <App />
   </StrictMode>,
 );

@@ -1,0 +1,7 @@
+.topBar {
+  display: flex;
+  min-height: 3rem;
+  padding: 0 var(--space-16);
+  background: var(--color-card);
+  border-bottom: var(--border);
+}
