@@ -20,7 +20,7 @@ function CurrentTab() {
   return (
     <MemoryRouter path="/">
       <NavTabs label="Example with a current tab">
-        <NavTabs.Link href="/">Dashboard</NavTabs.Link>
+        <NavTabs.Link href="/">Implementation</NavTabs.Link>
         <NavTabs.Link href="/components">Components</NavTabs.Link>
         <NavTabs.Link href="/docs">Docs</NavTabs.Link>
       </NavTabs>
