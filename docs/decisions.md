@@ -264,6 +264,21 @@ Is 84 KB a lot? Not for this product. React itself is 67 KB, many websites load 
 
 Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 
+**Update (2026-10-01, other headless libraries weighed):** asked once the build passed 500 kB before compression. Compressed sizes from Bundlephobia, each component measured on its own, React not counted:
+
+| Library | Dropdown | Switch | Accessible table with rows that open |
+|---|---|---|---|
+| React Aria Components 1.21 | 30 kB | 13 kB | 46 kB |
+| Radix UI | 29 kB | 5 kB | none |
+| Headless UI 2.2 | 32 kB | 9 kB | none |
+| Ark UI 5.39 | 32 kB | not measured | none (it has a tree, not a table) |
+| Ariakit 0.4 | about 30 kB | 9 kB (as a checkbox) | none |
+
+- **The dropdown costs about 30 kB in every library,** because each one carries the same things: positioning the floating list, keyboard handling and focus management.
+- **Only React Aria has the table.** With any of the others we would write the treegrid's keyboard and screen-reader behaviour ourselves, which is the work decision 13 set out to avoid. TanStack Table (32 kB) handles a table's data and open rows, but not its keyboard or screen-reader side.
+- **Components of one library share code,** so together they cost less than the sum: everything we use from React Aria is about 84 kB.
+- So another library would save little on the dropdown and the switch, and hand-writing the table would save roughly 40 kB at most. We keep React Aria.
+
 **Update (2026-10-01, the simple components as built):** details whose reasons aren't visible in the code:
 
 - **The switch is built from React Aria's `SwitchField` and `SwitchButton`,** the pair its documentation shows. The library still exports an older single component named `Switch`, marked as deprecated in 1.21, and our lint rejects deprecated APIs. Our own component is still called `Switch`.
@@ -282,6 +297,23 @@ Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 - **Also considered:** `#ui`, through Node's own `imports` field in `package.json`. It needs one line and no bundler setting, and both ways were tried and work. `@ui` was chosen because it's the look most React projects use.
 - **The cost:** each new component adds a line to `index.ts`. And because one file now leads to every component, a page that needs one of them loads them all. That costs nothing here: the dashboard is the first page and uses all of them, which the design's page-weight table already assumes (§7).
 - **Inside `ui/`,** files import each other by relative path, never through `@ui`, so the list doesn't import itself in a circle.
+
+**Update (2026-10-01, the tree table as built):** choices whose reasons aren't visible in the code:
+
+- **The arrow is a plain icon, not a button.** React Aria's documented way puts an "Expand" / "Collapse" button on the arrow. It names each row after its name cell, and the button sits in that cell, so Chrome reported rows as "Expand Branch 1" (collapsed) and "Collapse Company" (expanded): the state said twice, once of them backwards. With a decorative icon the row is "Branch 1, level 2, collapsed". Nothing is lost for mouse or keyboard: the row itself opens and closes with →, ←, Enter and a click anywhere on it. Screen-reader users lose the separate button and use the row.
+- **The hidden "Name" header is real text, hidden with React Aria's `VisuallyHidden`.** An `aria-label` would be simpler (the dropdown does that), but React Aria's column drops the attribute, and the header cell then has no name.
+- **The gap between columns is 8px on each side of every cell,** not 16px on one side. With the gap on one side, each number ended at its cell's edge, and the outline of a focused cell ran through the last digit. On a wide screen nothing moves compared with Figma. Below 40rem the numbers sit 8px closer to the name column than in the mockup.
+- **Focused cells stay visible through a scroll margin on the cells,** not scroll padding on the scrolling box. With scroll padding, clicking a pinned name in a table scrolled sideways made it jump back (from 300px to 132px at 375px), because the browser tried to scroll the pinned cell "into view".
+- **A focused row's outline is drawn from its pinned name cell,** as wide as the scrolling box. An outline on the row itself is hidden under that cell.
+- **All month headers break into two lines together,** once a column has less than 4.25rem for its text. Left alone they wrapped one by one in windows around 1280px wide, because "Jul 2024" is narrower than "May 2024".
+- **The space after the last column is an empty cell drawn by CSS** at the end of every row. Padding on the last cell instead would put the last number closer to its neighbour than the others are.
+- **Numbers use tabular figures; names don't.** In Inter, tabular figures also widen the hyphen and the digit 1, so a name like "North-Western" would read "North - Western".
+- **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, and an automated accessibility scan with no findings.
+- **Not checked yet:** a real screen reader (the names above are what Chrome computes, not what was heard), Safari, and a real phone.
+- **Known limits, accepted:**
+  - With browser text at 200% in a 375px window, the pinned name column is wider than the card, so the numbers can't be seen. At that text size the page needs a wider window.
+  - The table takes its width from its parent, so it must sit in something that has a width, such as a card in the page's column.
+  - After a mouse click, keyboard focus is on the clicked cell, not the row (React Aria's behaviour). The arrow keys then move between cells; Enter still opens and closes the row.
 
 ## 14. Keyboard and screen readers: the treegrid pattern
 
@@ -306,6 +338,8 @@ Screen readers hear each row's name, level, position and open/closed state, e.g.
 - A clear outline on the row or cell that has keyboard focus.
 - A label for the first column, such as "Name", visually hidden because its header is blank in the design. Screen readers need it.
 
+**Update (2026-10-01, as built):** the arrow is a decorative icon, not a button, so a row is announced by its name alone, as in the example above. Decision 13's update has the details.
+
 **How we check it:** automated tests for the keyboard behaviour and the attributes above, plus a manual check with VoiceOver on macOS. Screen-reader caveats go in the README.
 
 **Options considered:**
@@ -328,7 +362,7 @@ Screen readers hear each row's name, level, position and open/closed state, e.g.
 - The period dropdown moves under the title, and the demo strip wraps onto more lines if needed.
 - The page itself never scrolls sideways.
 
-A side effect of the period filter: "Last 3 months" fits on a phone without any scrolling.
+A side effect of the period filter: "Last month" fits on a phone without any scrolling, and "Last 3 months" needs only a short one (25px at 375px, measured once the table was built).
 
 **Options considered:**
 
@@ -439,8 +473,8 @@ Screen readers get the caption as part of the chart's description. They aren't i
 
 **Decision:** A slim bar at the very top of the page, above the design:
 
-- On the left, the tabs: "Dashboard" and "Docs", plus "Components" (added by decision 37).
-- On the right, the demo switches (decision 11), shown only on the Dashboard tab.
+- On the left, the tabs: "Implementation" (the dashboard itself) and "Docs", plus "Components" (added by decision 37). The first tab was called "Dashboard" until 2026-10-01, when the repo owner renamed it.
+- On the right, the demo switches (decision 11), shown only on the Implementation tab.
 - On phones, the bar wraps onto two lines.
 
 Everything meant for reviewers sits in this bar. Everything below it is the product, exactly as designed.
@@ -611,7 +645,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 30. The two tab addresses are handled by wouter
 
-**Decision:** [wouter](https://github.com/molefrog/wouter), a tiny router, switches between `/` (Dashboard) and `/docs` (Docs), makes Back and Forward work, and lets the Docs page load only when it's opened.
+**Decision:** [wouter](https://github.com/molefrog/wouter), a tiny router, switches between `/` (the dashboard) and `/docs` (Docs), makes Back and Forward work, and lets the Docs page load only when it's opened.
 
 **Why:** It's tiny (about +2 KB compressed), its API is close to React Router's (`Route`, `Link`, `Switch`, `useLocation`), and it covers everything two pages need. It's also a chance to try something new at little risk.
 
@@ -741,9 +775,9 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 ## 37. A "Components" tab shows our UI components
 
-**Decision:** A third tab, "Components" (`/components`), between Dashboard and Docs. It's a gallery page that shows each component from our own small design system (`ui/`) in its main states, with small sample data, for example:
+**Decision:** A third tab, "Components" (`/components`), between Implementation and Docs. It's a gallery page that shows each component from our own small design system (`ui/`) in its main states, with small sample data, for example:
 
-- the table with rows open and closed, and a row with nothing inside
+- the table, as one live example: clicking opens and closes its rows, and one row has nothing inside
 - the chart with one, three and five colours
 - the avatar with a photo and with initials
 - the dropdown and the switches

@@ -62,7 +62,7 @@ Every task follows these, on top of its own requirements.
 
 - **React Aria 1.21's tree table** (D13, D14):
   - It renders `<table role="treegrid">`. Rows carry `aria-level` and `aria-posinset`/`aria-setsize`, and `aria-expanded` only when they have children.
-  - Clicking a `<Button slot="chevron">` fires `onExpandedChange`.
+  - Clicking a `<Button slot="chevron">` fires `onExpandedChange`. (Task 8 ended up without that button: see D13's update.)
   - Clicking a row or pressing Enter fires the row action, **for rows without children too**, so only rows with children may toggle.
   - ← closes an open row; on a closed row it moves to the parent.
 - **React Aria's `Select`** uses `value`/`onChange`; `selectedKey` is deprecated.
@@ -267,7 +267,7 @@ Every task follows these, on top of its own requirements.
 - The tokens named in §5.8, plus `--color-row-hover: #f6f6f6`: the ink at 4% on white, precomputed as an opaque colour so the pinned table column covers what scrolls under it.
 - `App` routes `/`, `/components` and `/docs`, and redirects any other address to `/`. The last two pages load on demand (`lazy`).
 - `NavTabs` and `NavTabs.Link` (§5.6), built on wouter's `Link`. A link gets `aria-current="page"` when the location equals its `href`.
-- The examples format: each `*.examples.tsx` exports `meta` (`{ title: string }`) and `examples`, an object of small named components, one per state, in the order to show them. The functions are written in the file in that same order. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
+- The examples format: each `*.examples.tsx` exports `meta` (`{ title: string }`) and `examples`, an object of small named components, one per state, in the order to show them. The functions are written in the file in that same order. `meta` may also set `wide: true`, which shows the file's examples across the whole row, straight in the gallery's card (added in Task 8 for the table). `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
 - Browser tab titles (§5.2) with React 19's `<title>`. Check which title wins over the one in `index.html`, and remove that one if needed.
 - The favicon from the approved mockup: three rising columns, each stacked in the first three chart colours (§5.9).
 
@@ -330,20 +330,19 @@ type TreeTableProps<Row> = {
   - `expandedKeys={openRowIds}`
   - `onExpandedChange`, which reports the one row that changed through `onRowOpenChange`
 - Rows recurse through `<Collection items={getChildren(row)}>`.
-- Only rows with children get the chevron (`<Button slot="chevron">`) and a row `onAction`; other rows get a 1.5rem spacer in the chevron's place (D5). React Aria fires row actions for rows without children too (verified), so they get none.
+- Only rows with children get the chevron and a row `onAction`; other rows get a 1.5rem spacer in the chevron's place (D5). React Aria fires row actions for rows without children too (verified), so they get none. The chevron is a plain decorative icon, not React Aria's `<Button slot="chevron">`: with the button, every row was announced as "Expand …" or "Collapse …" (D13's update).
 - Pass `dependencies={[columns, openRowIds]}` to `TableBody` and to every nested `Collection`. Otherwise React Aria reuses cached rows whose click handlers still see the old state.
-- Indentation is `(level − 1) × 1.75rem`, from the cell's `level`, so names line up as §5.6 describes.
+- Indentation is `(level − 1) × 1.75rem`, read from React Aria's own `--table-row-level` variable on the row, so names line up as §5.6 describes.
 - **Narrow screens:**
   - the name column is pinned (`position: sticky`, with an opaque background)
   - the table has a minimum width, so month columns never squash; it scrolls sideways inside its card
-  - `scroll-padding-inline-start` equals the name column's width. Check that a focused month cell never hides behind the pinned column (WCAG 2.4.11).
+  - every cell after the name column has a `scroll-margin-inline-start` equal to the name column's width, so a focused month cell never hides behind the pinned column (WCAG 2.4.11). Scroll padding on the box, the first plan, made a scrolled table jump back when a pinned name was clicked.
 - **Row hover:** plain `:hover` inside `@media (hover: hover)`. React Aria marks hover only on rows with an action, and every row gets the reading-aid shade (D39). Only rows with children get the hand cursor.
-- The Figma values are in §5.6: 56px rows, padding 18/24/18/16, a 264px name column, 1px borders, the chevron's path and rotation.
+- The Figma values are in §5.6: 56px rows, padding 18/24/18/16, a 264px name column, 1px borders, the chevron's path and rotation. The 16px gap between columns is 8px on each side of every cell, so a focused cell's outline doesn't touch its number.
 - **Found while mocking it up:**
   - An outline on a focused row is hidden under the pinned name cell, in every browser. Draw the focus ring from the pinned cell instead, as wide as the scrolling box.
-  - Month headers wrap onto two lines when a column gets too narrow, and a month column is never narrower than 4rem (§5.9).
-  - Below 40rem, channel rows need 1.25rem more indent than the level alone gives, or their names start left of the advisor's name.
-- Examples: closed, opened, a row with nothing inside, a very long name, and many columns in a narrow box.
+  - Month headers wrap onto two lines when a column gets too narrow, all of them at once, and a month column is never narrower than 4rem (§5.9).
+- Examples: one live example, `Default`: a small company with twelve months, starting with only the company row open. Clicking shows the rest.
 
 **Steps:**
 
@@ -484,7 +483,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
   2. no data yet: placeholders
   3. a request running while numbers are on screen: the numbers faded, and the spinner by the dropdown
   4. otherwise: the chart and the table
-- `ClientsTable`: the columns from §5.7, with `RowName` (the avatar for advisors, then the name).
+- `ClientsTable`: the columns from §5.7, with `RowName` (the avatar for advisors, then the name). Below 40rem, `RowName` gives channel names 1.25rem (the avatar's width) of extra indent in its own CSS, or they start left of the advisor's name. `TreeTable` can't do this: it only knows a row's level, not that advisors have avatars.
 - `ChartLabel` for a month: "May 2024", then the subject's total from `totals` (never summed), then each part with its colour square and number (§5.7).
 - `PeriodSelect`: the `PERIODS`, labelled "Last 12 months", "Last 6 months", "Last 3 months" and "Last month".
 
