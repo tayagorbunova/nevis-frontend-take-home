@@ -432,6 +432,11 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 - One package with folders (`src/`, `server/`, a shared folder): the simplest setup, but the boundaries exist only by convention.
 
+**Why npm, and not pnpm or Bun** (compared on 2026-10-01): npm ships with Node, so reviewers, CI and Vercel need nothing extra: clone, `npm install`, `npm run dev`.
+
+- pnpm is the usual choice for monorepos. It's faster, and it's strict about dependencies: a package can only import what it declared itself, while npm puts everything in one shared folder. The cost is one more tool for reviewers to install. For a bigger monorepo, we'd pick it.
+- Bun installs fastest, but it's also its own runtime, and the brief asks for a Node.js API. Used only as an installer, it would make reviewers install two tools for little gain.
+
 ## 23. Work reaches `main` through pull requests
 
 **Decision:** Every piece of work goes on its own branch and reaches `main` through a pull request on GitHub. Each pull request runs the automated checks and gets its own Vercel preview link. Commit messages follow the conventional style (`docs:`, `feat:`, `fix:`, `test:`, `chore:`). The repo owner merges each pull request.
