@@ -1,4 +1,4 @@
-import { NavTabs } from "../ui/NavTabs/NavTabs";
+import { NavTabs } from "@ui";
 
 import styles from "./TopBar.module.css";
 

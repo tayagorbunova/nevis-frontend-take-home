@@ -1,0 +1,74 @@
+.switch {
+  --color-switch-off: rgb(20 20 19 / 60%);
+  --duration-fast: 150ms;
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 1.5rem;
+  cursor: pointer;
+}
+
+.track {
+  flex: none;
+  width: 1.75rem;
+  height: 1rem;
+  padding: 0.125rem;
+  background: var(--color-switch-off);
+  border-radius: 1rem;
+}
+
+.thumb {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--color-card);
+  border-radius: 50%;
+}
+
+.switch[data-selected] .track {
+  background: var(--color-text);
+}
+
+.switch[data-selected] .thumb {
+  transform: translateX(0.75rem);
+}
+
+.switch[data-hovered] .track {
+  box-shadow: 0 0 0 0.1875rem var(--color-control-border);
+}
+
+.switch[data-focus-visible] .track {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.switch[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .thumb {
+    transition: transform var(--duration-fast);
+  }
+}
+
+@media (forced-colors: active) {
+  .track {
+    background: ButtonText;
+  }
+
+  .switch[data-selected] .track {
+    background: Highlight;
+  }
+
+  .switch[data-disabled] {
+    color: GrayText;
+    opacity: 1;
+  }
+
+  .switch[data-disabled] .track {
+    background: GrayText;
+  }
+}

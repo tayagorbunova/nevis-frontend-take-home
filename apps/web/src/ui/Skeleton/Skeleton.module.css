@@ -1,0 +1,24 @@
+.skeleton {
+  --duration-pulse: 1s;
+
+  display: block;
+  background: var(--color-tint);
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: pulse var(--duration-pulse) ease-in-out infinite alternate;
+  }
+}
+
+@media (forced-colors: active) {
+  .skeleton {
+    border: var(--border-width) solid GrayText;
+  }
+}

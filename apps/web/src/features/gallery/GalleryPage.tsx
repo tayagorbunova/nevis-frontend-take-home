@@ -1,21 +1,19 @@
-import type { ComponentType } from "react";
-
-import type { ExamplesMeta } from "../../ui/examples";
+import { Card, type Examples, type ExamplesMeta } from "@ui";
 
 import styles from "./GalleryPage.module.css";
 
-type ExamplesModule = { meta: ExamplesMeta } & Record<string, ComponentType>;
+type ExamplesModule = { meta: ExamplesMeta; examples: Examples };
 
 const exampleModules = import.meta.glob<ExamplesModule>("../../ui/**/*.examples.tsx", {
   eager: true,
 });
 
 const sections = Object.values(exampleModules)
-  .map(({ meta, ...examples }) => ({ title: meta.title, examples: Object.entries(examples) }))
+  .map(({ meta, examples }) => ({ title: meta.title, examples: Object.entries(examples) }))
   .sort((a, b) => a.title.localeCompare(b.title));
 
-function toCaption(exportName: string) {
-  return exportName.replace(/\B[A-Z]/g, (capital) => ` ${capital.toLowerCase()}`);
+function toCaption(exampleName: string) {
+  return exampleName.replace(/\B[A-Z]/g, (capital) => ` ${capital.toLowerCase()}`);
 }
 
 export function GalleryPage() {
@@ -29,13 +27,15 @@ export function GalleryPage() {
           <h2 className={styles.name}>{title}</h2>
 
           <div className={styles.examples}>
-            {examples.map(([exportName, Example]) => (
-              <figure key={exportName} className={styles.example}>
-                <figcaption className={styles.caption}>{toCaption(exportName)}</figcaption>
+            {examples.map(([exampleName, Example]) => (
+              <figure key={exampleName} className={styles.example}>
+                <figcaption className={styles.caption}>{toCaption(exampleName)}</figcaption>
 
-                <div className={styles.card}>
-                  <Example />
-                </div>
+                <Card variant="unpadded">
+                  <div className={styles.stage}>
+                    <Example />
+                  </div>
+                </Card>
               </figure>
             ))}
           </div>

@@ -1,0 +1,42 @@
+.button {
+  --color-pressed: rgb(20 20 19 / 8%);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: var(--control-height);
+  padding: var(--space-4) var(--space-12);
+  background: var(--color-card);
+  border: var(--border-width) solid var(--color-control-border);
+  border-radius: var(--radius-large);
+  outline: none;
+  cursor: pointer;
+}
+
+.button[data-hovered] {
+  background: var(--color-row-hover);
+}
+
+.button[data-pressed] {
+  background: var(--color-pressed);
+}
+
+.button[data-focus-visible] {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button[data-pending] {
+  cursor: default;
+}
+
+.button[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+@media (forced-colors: active) {
+  .button[data-disabled] {
+    opacity: 1;
+  }
+}

@@ -20,6 +20,11 @@ h1 {
   line-height: var(--line-height-title);
 }
 
+button {
+  color: inherit;
+  font: inherit;
+}
+
 :focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);

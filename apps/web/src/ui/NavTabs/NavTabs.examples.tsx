@@ -2,7 +2,7 @@ import { useState, type PropsWithChildren } from "react";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
-import type { ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../examples";
 
 import { NavTabs } from "./NavTabs";
 
@@ -16,7 +16,7 @@ function MemoryRouter({ path, children }: MemoryRouterProps) {
   return <Router hook={location.hook}>{children}</Router>;
 }
 
-export function CurrentTab() {
+function CurrentTab() {
   return (
     <MemoryRouter path="/">
       <NavTabs label="Example with a current tab">
@@ -27,3 +27,5 @@ export function CurrentTab() {
     </MemoryRouter>
   );
 }
+
+export const examples: Examples = { CurrentTab };
