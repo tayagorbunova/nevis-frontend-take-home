@@ -54,7 +54,7 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 
 | | Page | API |
 |---|---|---|
-| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3210 |
+| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3001 |
 | **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function |
 
 **Verified first:** exactly how Vercel serves the Hono app next to the static page inside our monorepo. The first implementation task is a minimal deploy that proves `/`, `/docs` and `/api/client-counts` all work, before any features are built. Known ingredients:

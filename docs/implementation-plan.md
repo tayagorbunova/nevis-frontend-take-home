@@ -113,8 +113,8 @@ Every task follows these, on top of its own requirements.
 - `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, `module: esnext`, `moduleResolution: bundler`, `target: es2023`, `resolveJsonModule`, `noEmit`, `skipLibCheck`.
 - The web app's tsconfig split follows Vite's own template: `tsconfig.app.json` for browser code, `tsconfig.node.json` for config files, so Node-only code can't slip into the page.
 - `npm run dev` runs both apps with `concurrently`:
-  - the API with `tsx watch src/server.ts`, on port 3210
-  - Vite on port 5173, whose `server.proxy` sends `/api` to port 3210 (`vite preview` reuses it)
+  - the API with `tsx watch src/server.ts`, on port 3001
+  - Vite on port 5173, whose `server.proxy` sends `/api` to port 3001 (`vite preview` reuses it)
 - Vite uses `css.transformer: 'lightningcss'`. Check that the default build target matches §5.8 (recent Chrome, Edge and Firefox; Safari 16.4 and newer), and set `build.target` if it doesn't.
 - ESLint (flat config):
   - `@eslint/js` recommended
@@ -216,7 +216,7 @@ Every task follows these, on top of its own requirements.
 **Steps:**
 
 - [ ] Implement it.
-- [ ] Check by hand with `curl -i` against `http://localhost:3210/api/client-counts`:
+- [ ] Check by hand with `curl -i` against `http://localhost:3001/api/client-counts`:
   - no period: months `2024-02` to `2025-01`, and the data exactly as given
   - `?period=last-3-months`: months `2024-11` to `2025-01`, with every row trimmed to 3 values
   - `?period=nope`: 400 with `invalid_period`
