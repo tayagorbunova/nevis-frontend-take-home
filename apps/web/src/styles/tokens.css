@@ -1,0 +1,36 @@
+:root {
+  --color-text: #141413;
+  --color-text-muted: rgb(20 20 19 / 60%);
+  --color-border: rgb(20 20 19 / 8%);
+  --color-control-border: rgb(20 20 19 / 16%);
+  --color-tint: rgb(20 20 19 / 8%);
+  --color-row-hover: #f6f6f6;
+  --color-page: #f7f5ed;
+  --color-card: #ffffff;
+
+  --font-family: "Inter Variable", system-ui, sans-serif;
+  --font-size-footnote: 0.75rem;
+  --font-size-body: 0.875rem;
+  --font-size-title: 2.1875rem;
+  --line-height-footnote: 1.333;
+  --line-height-body: 1.4286;
+  --line-height-title: 1.25;
+
+  --space-4: 0.25rem;
+  --space-8: 0.5rem;
+  --space-12: 0.75rem;
+  --space-16: 1rem;
+  --space-24: 1.5rem;
+
+  --radius-small: 0.125rem;
+  --radius-medium: 0.25rem;
+  --radius-large: 0.5rem;
+
+  --border-width: 1px;
+  --border: var(--border-width) solid var(--color-border);
+  --focus-ring: 2px solid var(--color-text);
+  --focus-ring-offset: 2px;
+
+  --control-height: 2.25rem;
+  --opacity-disabled: 0.5;
+}
