@@ -54,8 +54,8 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 
 | | Page | API |
 |---|---|---|
-| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3001, `DEMO_MODE=true` |
-| **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function, `DEMO_MODE=true` |
+| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3001 |
+| **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function |
 
 **Verified first:** exactly how Vercel serves the Hono app next to the static page inside our monorepo. The first implementation task is a minimal deploy that proves `/`, `/docs` and `/api/client-counts` all work, before any features are built. Known ingredients:
 
@@ -104,10 +104,10 @@ The rules the schemas enforce:
 
 **`GET /api/client-counts?period=<Period>`:**
 
-1. **Demo** (only when `DEMO_MODE=true`):
+1. **Demo:**
    - If the `X-Demo` header contains `slow`, wait 2,000 ms.
-   - Then, if it contains `fail`, answer `500 { error: { code: 'internal_error', message: 'Simulated failure (demo mode)' } }`.
-   - Without demo mode, the header is ignored.
+   - Then, if it contains `fail`, answer `500 { error: { code: 'internal_error', message: 'Simulated failure (demo)' } }`.
+   - The header only affects the request that carries it, so one reviewer's switches never touch anyone else's requests (D11).
 2. **Check the period** against the contract. A missing period means `last-12-months`. An unknown period gets `400 { error: { code: 'invalid_period', message: 'Unknown period "…". Use one of: last-12-months, last-6-months, last-3-months, last-month.' } }`.
 3. **Pick the months.** From `FIRST_MONTH` and the data's 12 values, list the months (`2024-02` … `2025-01`), keep the last N (12, 6, 3 or 1), and trim every row's `values`, at every level, to the same N. Nothing else in the data changes: no totals are recalculated or "fixed" (D4).
 4. **Answer** `200 { months, company }` with `Cache-Control: no-store`.
@@ -143,6 +143,7 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
 - **`NavTabs` uses wouter's own `Link`,** which handles Cmd/Ctrl-click and accepts `aria-current`. React Aria's `Link` doesn't accept `aria-current` (checked in its types), and no other React Aria links are used, so React Aria's router integration isn't needed.
 - **The top bar** holds `NavTabs` (Dashboard, Components, Docs) on the left and `DemoSwitches` on the right, shown only on the Dashboard tab. On narrow screens it wraps onto two lines.
 - **Browser tab titles:** "Clients · Nevis home task", "Components · Nevis home task" and "Docs · Nevis home task".
+- **Favicon:** our own small SVG icon in the design's style (D39).
 
 ### 5.3 Page state (D28, section 1 of the design review)
 
@@ -278,7 +279,7 @@ Each has its examples file for the Components tab.
 
 ### 5.8 Styles (D25, D32, D39, D41)
 
-**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. Each notes the Figma variable it comes from (D25, D41):
+**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. This list says which Figma variable each comes from (D25, D41); the CSS itself has no comments:
 
 - **Colours:**
   - `--color-text`: #141413, Content/Primary
@@ -368,6 +369,7 @@ Testing is the last step of the build, and the list is decided then.
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
 - **Node 24, npm workspaces, TypeScript 6.0.3** in strict mode (not 7.0: D40).
+- **No comments in the code,** config files included. The code has to be clear by itself, and the reasons behind settings that aren't obvious are recorded in [decisions.md](decisions.md) (D33).
 - **Linting and formatting:** ESLint 10 with typescript-eslint (type-aware) and the React Hooks rules, plus Prettier. `eslint-plugin-jsx-a11y` isn't used: its latest release supports ESLint only up to version 9 (checked 2026-10-01, D33).
 - **Root scripts:**
   - `dev`: the API and the page together, run side by side with `concurrently` (the API through `tsx watch`)
@@ -377,8 +379,8 @@ Testing is the last step of the build, and the list is decided then.
   - `format` (and `format:check`)
   - `test`: Vitest
   - `test:e2e`: Playwright against the built app
-- **CI (GitHub Actions) on every pull request:** install (`npm ci`), `typecheck`, `lint`, `format:check`, `test`, `build`, `test:e2e`.
-- **Vercel:** a preview for every pull request and production from `main`, both with `DEMO_MODE=true`.
+- **CI (GitHub Actions) on every pull request:** install (`npm ci`), `typecheck`, `lint`, `format:check`, `test`, `build`, `test:e2e`. Once the repo is public, a rule on `main` blocks merging until these checks pass (D23).
+- **Vercel:** a preview for every pull request and production from `main`.
 
 ## 10. How the work is delivered
 

@@ -179,7 +179,9 @@ It uses the design's existing styles: Inter 14px, the same thin borders and colo
 - **Slow responses:** every request takes an extra 2 seconds.
 - **Fail requests:** every request fails.
 
-When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The server only listens to these notes when demo mode is on (it is on for local development and for the hosted demo). The switches are remembered across reloads, so the first-load states can be seen too.
+When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too.
+
+**Update (2026-10-01):** the server always obeys these notes. An earlier version had a "demo mode" setting to switch that off, but nothing used the off state: the app runs as a demo everywhere, and a note only affects the request that carries it, so nobody can slow or fail the site for anyone else. A real product wouldn't ship the demo switches at all.
 
 **Why:** Reviewers can see every loading and error state without developer tools. Because the server does the work, the error travels the real path (server → network → app), exactly like a real failure would. The strip is noticeable but small, so it doesn't pull attention from the dashboard.
 
@@ -432,11 +434,18 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 - One package with folders (`src/`, `server/`, a shared folder): the simplest setup, but the boundaries exist only by convention.
 
+**Why npm, and not pnpm or Bun** (compared on 2026-10-01): npm ships with Node, so reviewers, CI and Vercel need nothing extra: clone, `npm install`, `npm run dev`.
+
+- pnpm is the usual choice for monorepos. It's faster, and it's strict about dependencies: a package can only import what it declared itself, while npm puts everything in one shared folder. The cost is one more tool for reviewers to install. For a bigger monorepo, we'd pick it.
+- Bun installs fastest, but it's also its own runtime, and the brief asks for a Node.js API. Used only as an installer, it would make reviewers install two tools for little gain.
+
 ## 23. Work reaches `main` through pull requests
 
 **Decision:** Every piece of work goes on its own branch and reaches `main` through a pull request on GitHub. Each pull request runs the automated checks and gets its own Vercel preview link. Commit messages follow the conventional style (`docs:`, `feat:`, `fix:`, `test:`, `chore:`). The repo owner merges each pull request.
 
 **Why:** It's how real teams work, every change gets checks and a preview for free, and the history reads as a series of small, described steps.
+
+**Update (2026-10-01):** once the repo is public, a rule on `main` blocks merging until the checks pass. Merging goes live, so this keeps broken code off the site. On a free GitHub account the rule only works on public repos, so it's added when the repo goes public.
 
 **Options considered:**
 
@@ -461,7 +470,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 25. Styles are plain CSS modules
 
-**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables: one layer, named by purpose, each noting which Figma variable it comes from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
+**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables: one layer, named by purpose. The design doc lists which Figma variable each one comes from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
 
 **Why:** Modern CSS has what we need built in, including nesting and variables. Vite supports CSS modules with no setup. That's one tool fewer to install, configure and explain.
 
@@ -612,6 +621,21 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 **Update (2026-10-01, while planning):** its latest release (6.10.2) supports ESLint only up to version 9, so it's dropped.
 
+**Update (2026-10-01, the scaffold):** what the tooling does beyond the presets, and why:
+
+- **No comments in the code,** config files included. The code has to be clear by itself, so reasons like the ones below live here.
+- **Three rules from typescript-eslint's strict presets are adjusted:**
+  - Object shapes are written with `type`, never `interface`, so there's one convention.
+  - Numbers are allowed inside template strings, because they're safe there. The preset's other options for that rule are listed in full, because ESLint replaces a rule's options instead of merging them.
+  - One-line handlers such as `() => setCount(1)` are allowed, as is usual in React.
+- **Lint warnings fail the check too** (`--max-warnings 0`).
+- **ESLint enforces the folder boundaries** from the design doc (§2.2), so crossing one fails the check. ESLint keeps only the import restrictions of the last config that matches a file, so the web app's files are split into groups that don't overlap, each with its full list.
+- **Plain `.js` files get no type-aware rules,** because they belong to no TypeScript project. Today that's only the ESLint config itself.
+- **TypeScript only checks types** (`noEmit`): Vite and tsx turn the code into JavaScript. Each package's own config adds where its code runs, which decides whether it gets browser types or Node types.
+- **Prettier leaves the Markdown docs alone.** They're hand-written, and Prettier would rewrite every table.
+- **CI's token can only read the repository,** the least it needs.
+- **npm's install-script approvals** (`allowScripts` in `package.json`) name the two packages allowed to run a script on install: esbuild and fsevents, both brought in by Vite and tsx.
+
 **Why:** It's the standard reviewers expect, and the type-aware checks catch the bugs that matter most in our data-loading code.
 
 **Options considered:**
@@ -638,7 +662,7 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 - **`period`** is one of `last-12-months` (the default), `last-6-months`, `last-3-months` or `last-month`. The list lives in `packages/contract`, so the server's check and the page's dropdown can never disagree.
 - **The answer (200):** `{ "months": [...], "company": {...} }`. `months` lists the months covered, and every row's `values` is trimmed to exactly those months, in the same order. `company` is the brief's payload, plus Anna's `avatarUrl` (decision 16).
 - **Errors** share one shape, `{ "error": { "code", "message" } }`: 400 with `invalid_period` for an unknown period, and 500 with `internal_error` when something breaks or the demo "fail" switch is on. The page shows its own friendly message; the server's message is for developers.
-- **Demo notes** travel in a request header, `X-Demo: slow`, `fail`, or both. "slow" waits 2 seconds and "fail" answers with a 500. The server only listens when its `DEMO_MODE=true` setting is on (locally, and on the hosted demo).
+- **Demo notes** travel in a request header, `X-Demo: slow`, `fail`, or both. "slow" waits 2 seconds and "fail" answers with a 500. The server always obeys them (decision 11).
 - **No caching:** answers carry `Cache-Control: no-store`, so every request really reaches the server. Otherwise a cached answer could hide a switched-on demo.
 - **On the server:** the data file is the brief's payload, copied exactly, plus Anna's `avatarUrl`. The first month (`2024-02`) sits next to it as a setting, because the payload has no dates. Picking the months is one small, pure function. Anna's photo is served as a static file by the page's hosting.
 
@@ -747,6 +771,8 @@ It stays generic, knowing nothing about clients, and TypeScript checks that ever
   - The chevron turns smoothly and the chart's bars move briefly when they change. With the system's "reduce motion" setting on, nothing animates.
   - Browser tab titles: "Clients · Nevis home task", with matching titles for Components and Docs.
   - The code survives cases our data doesn't have: a company with no branches shows the company row alone, and a row with nothing to split shows a single colour.
+
+**Favicon (added 2026-10-01):** our own small icon in the design's style, for example three chart columns in the design's lavender. We don't use Nevis's favicon: the Figma file and the data were given to us to build with, but their logo wasn't, and the repo and the hosted demo are public. Without a favicon, the browser shows its default icon.
 
 **How new components get their look:** any component without a Figma design (the top bar and tabs, the dropdown, the switches, the chart label, the placeholders, the error state, the button) first gets a visual mockup of all its states, made by an agent. It's built only after the repo owner approves the mockup.
 

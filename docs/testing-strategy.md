@@ -43,7 +43,6 @@ It also openly lacks guidance on whether a change is worth testing at all ([issu
 | 1 | The default request returns Feb 2024–Jan 2025, untouched (Company in May 2024 = 301), in the contract's shape. | API | Months out of line with the numbers; the server "fixing" totals |
 | 2 | "Last 3 months" returns Nov 2024–Jan 2025, with every row trimmed to the matching values. | API | Counting back from today; off by one month |
 | 3 | An unknown period gets a 400 "unknown period". | API | Crashing, or silently falling back to 12 months |
-| 4 | The demo "fail" note is ignored without demo mode and obeyed with it. | API | Anyone could make the real site fail |
 | 5 | The rule for what the chart shows, as a table of cases: the latest opened row wins, closing falls back, rows hidden inside a closed parent don't count (but stay open for when it reopens), everything closed shows Company. | Pure function | The chart stuck on a row that's no longer visible |
 | 6 | First load: placeholders, then Company open with "Company by branch"; Branch 2 can't open; Company in May shows 301. | Whole app | A crash on rows with nothing inside; the UI recalculating 279 |
 | 7 | Opening and closing rows by mouse and keyboard moves the chart: Branch 1 → Anna → back → Company. | Whole app | Keyboard opening not connected to the chart; wrong fallback |
@@ -51,6 +50,8 @@ It also openly lacks guidance on whether a change is worth testing at all ([issu
 | 9 | Changing the period keeps the old numbers (faded) until the new ones arrive, then shows only the new months. | Whole app | Flashing back to placeholders; old months under the new label |
 | 10 | On error: "Couldn't load clients" and "Try again", with no stale numbers; Try again works. | Whole app | Old data under the wrong label |
 | 11 | At 375px, neither page scrolls sideways, and Docs shows its content. | Real browser | Something overflowing on phones; docs missing from the build |
+
+Test 4 of the first draft checked a "demo mode" setting that switched the demo notes off. The setting was dropped (D11), and the test with it.
 
 ## What we deliberately don't test
 
@@ -85,5 +86,5 @@ It also openly lacks guidance on whether a change is worth testing at all ([issu
 
 ## Open questions (to revisit)
 
-- **Are server tests in scope at all?** This is a frontend assignment. The whole-app tests already run through the real server logic, so tests 1 and 2 are largely covered by tests 6 and 9. Only tests 3 (unknown period) and 4 (demo guard) check something nothing else does.
+- **Are server tests in scope at all?** This is a frontend assignment. The whole-app tests already run through the real server logic, so tests 1 and 2 are largely covered by tests 6 and 9. Only test 3 (unknown period) checks something nothing else does.
 - **Is this the right list?** It's the research's proposal, not yet a final choice. Each test should still earn its place.

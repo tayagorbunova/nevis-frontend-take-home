@@ -40,6 +40,8 @@ Every task follows these, on top of its own requirements.
   - animate only `transform` and `opacity`, with motion off under reduced motion
 - **Components without a Figma design** follow the mockup approved in Task 5.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
+- **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers.
+- **Nothing for problems that don't exist yet:** no defensive code for cases that can't happen, and no rules or settings without a use today. A review finding becomes a change only if it fixes something broken or visible today, or makes the code simpler.
 - **Tests:** none before Task 15, where the list is agreed with the repo owner and then written.
 - **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm run build` (plus the tests, once Task 15 adds them), then a commit with a conventional message.
 - **Every UI change gets the §10 check:**
@@ -95,15 +97,15 @@ Every task follows these, on top of its own requirements.
 
 **Files:**
 
-- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `tsconfig.json` (for the TypeScript files at the root), `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.github/workflows/ci.yml`
+- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.github/workflows/ci.yml`
 - `apps/api/`: `package.json`, `tsconfig.json`, `src/app.ts`, `src/server.ts`
-- `apps/web/`: `package.json`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `vite.config.ts`, `index.html`, `src/main.tsx` (a placeholder), `src/vite-env.d.ts`
+- `apps/web/`: `package.json`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `vite.config.ts`, `index.html`, `src/main.tsx` (a placeholder)
 
 **Produces:**
 
 - Package names `@nevis/api` and `@nevis/web` (`@nevis/contract` comes in Task 3).
 - `@nevis/api` exports its TypeScript source directly (`"exports": { ".": "./src/app.ts" }`), with no build step, because Vite, tsx and TypeScript all read the source.
-- `createApp({ demoMode }: { demoMode: boolean })` in `apps/api/src/app.ts`. For now it has one stub route, `GET /api/client-counts`, answering `{ demoMode }`.
+- `createApp()` in `apps/api/src/app.ts`. For now it has one stub route, `GET /api/client-counts`, answering `{ "ok": true }`.
 - The root scripts from §9: `dev`, `build`, `typecheck`, `lint`, `format` and `format:check`. (`test` and `test:e2e` come with Task 15.)
 
 **Settings to get right:**
@@ -111,8 +113,8 @@ Every task follows these, on top of its own requirements.
 - `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, `module: esnext`, `moduleResolution: bundler`, `target: es2023`, `resolveJsonModule`, `noEmit`, `skipLibCheck`.
 - The web app's tsconfig split follows Vite's own template: `tsconfig.app.json` for browser code, `tsconfig.node.json` for config files, so Node-only code can't slip into the page.
 - `npm run dev` runs both apps with `concurrently`:
-  - the API with `tsx watch src/server.ts`, on port 3001, always in demo mode locally (§2.3)
-  - Vite on port 5173, whose `server.proxy` and `preview.proxy` send `/api` to port 3001
+  - the API with `tsx watch src/server.ts`, on port 3001
+  - Vite on port 5173, whose `server.proxy` sends `/api` to port 3001 (`vite preview` reuses it)
 - Vite uses `css.transformer: 'lightningcss'`. Check that the default build target matches §5.8 (recent Chrome, Edge and Firefox; Safari 16.4 and newer), and set `build.target` if it doesn't.
 - ESLint (flat config):
   - `@eslint/js` recommended
@@ -120,14 +122,14 @@ Every task follows these, on top of its own requirements.
   - `eslint-plugin-react-hooks` recommended, for the web app
   - `no-restricted-imports` rules for the boundaries in the Global constraints
   - no formatting rules: Prettier formats
-- Prettier: `singleQuote: true`, `printWidth: 100`. It ignores `package-lock.json`, `dist`, `coverage` and `private`.
+- Prettier: `printWidth: 100`, and its defaults for everything else, including double quotes. It ignores `package-lock.json`, `dist`, `coverage`, `private` and the Markdown docs.
 - CI runs on `pull_request`: `actions/setup-node` with the version from `.nvmrc` and the npm cache, `npm ci`, then `typecheck`, `lint`, `format:check` and `build`.
 
 **Steps:**
 
 - [ ] Create the files and run `npm install`.
 - [ ] Check that all the root scripts pass.
-- [ ] Check that `npm run dev` shows the placeholder at `http://localhost:5173`, and that `curl http://localhost:5173/api/client-counts` answers `{"demoMode":true}`.
+- [ ] Check that `npm run dev` shows the placeholder at `http://localhost:5173`, and that `curl http://localhost:5173/api/client-counts` answers `{"ok":true}`.
 - [ ] Check that a boundary rule fires: import `recharts` in `main.tsx`, see `npm run lint` fail, undo.
 - [ ] Commit `chore: scaffold the monorepo and tooling`.
 
@@ -139,22 +141,21 @@ Every task follows these, on top of its own requirements.
 
 - create the Vercel account, signing in with GitHub
 - import the repo
-- set `DEMO_MODE=true` for Production and Preview
 
 **Files:**
 
-- `api/client-counts.ts`: `export const GET = handle(createApp({ demoMode: process.env.DEMO_MODE === 'true' }))`, with `handle` from `hono/vercel`
+- `api/client-counts.ts`: `export const GET = handle(createApp())`, with `handle` from `hono/vercel`
 - `vercel.json`:
   - `buildCommand: "npm run build"`
   - `outputDirectory: "apps/web/dist"`
   - one rewrite sending everything except `/api/…` to `/index.html`, because the app handles `/components` and `/docs` itself
-- the root `tsconfig.json` now includes `api/`
+- a root `tsconfig.json`, for the TypeScript files in `api/`
 - Node 24 comes from `engines` in the root `package.json`
 
 **Steps:**
 
 - [ ] Push the branch, open the pull request and wait for the preview.
-- [ ] Check on the preview: `/` and a direct visit to `/docs` show the page, and `/api/client-counts` answers `{"demoMode":true}`.
+- [ ] Check on the preview: `/` and a direct visit to `/docs` show the page, and `/api/client-counts` answers `{"ok":true}`.
 - [ ] **If the function fails to start:** Vercel compiles a function's TypeScript files one by one, so imports without file extensions, or a workspace package whose entry is a `.ts` file, can fail at runtime. Try in this order:
   1. explicit `.js` extensions on the relative imports in `apps/api` (and later in `packages/contract`)
   2. bundling the function during the build and publishing it through Vercel's Build Output API
@@ -197,7 +198,7 @@ Every task follows these, on top of its own requirements.
 
 **Produces:**
 
-- `createApp({ demoMode })`, now real
+- `createApp()`, now real
 - `selectPeriod(company: ApiCompany, firstMonth: string, period: Period): ClientCountsResponse`
 - `FIRST_MONTH = '2024-02'`
 
@@ -236,6 +237,7 @@ Every task follows these, on top of its own requirements.
   - the first-load placeholders, the faded refreshing state and the error state
   - the Components and Docs page layouts
   - the dashboard at 375px
+  - the favicon: our own small icon in the design's style, shown at browser-tab size
 - [ ] Show it to the repo owner and adjust it until they approve.
 - [ ] Commit `docs: add the approved mockup of the new components`. Tasks 6–14 follow it.
 
@@ -249,6 +251,7 @@ Every task follows these, on top of its own requirements.
 - `src/app/App.tsx`, `App.module.css`, `TopBar.tsx`, `TopBar.module.css`
 - `src/ui/NavTabs/NavTabs.tsx`, `NavTabs.module.css`, `NavTabs.examples.tsx`; `src/ui/examples.ts`
 - `src/features/gallery/GalleryPage.tsx`, `GalleryPage.module.css`
+- `apps/web/public/favicon.svg`, linked from `index.html`
 - placeholders, filled in later: `src/features/clients/ClientsPage.tsx` (Task 13), `src/features/docs/DocsPage.tsx` (Task 14)
 
 **Produces:**
@@ -258,6 +261,7 @@ Every task follows these, on top of its own requirements.
 - `NavTabs` and `NavTabs.Link` (§5.6), built on wouter's `Link`. A link gets `aria-current="page"` when the location equals its `href`.
 - The examples format: `type ExamplesMeta = { title: string }`. Each `*.examples.tsx` exports `meta` and one named component per state, like Storybook stories. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
 - Browser tab titles (§5.2) with React 19's `<title>`. Check which title wins over the one in `index.html`, and remove that one if needed.
+- The favicon from the approved mockup (D39).
 
 **Steps:**
 
@@ -525,6 +529,7 @@ The last stage from §10:
 
 - [ ] Once the release pull request is merged, run the §10 checklist on the production site, including on a phone.
 - [ ] Ask the repo owner to confirm, then make the repository public with `gh repo edit --visibility public --accept-visibility-change-consequences`. Check the README's links afterwards.
+- [ ] Add a rule on `main` that blocks merging until the CI checks pass (D23). It only works on public repos with a free GitHub account, which is why it comes last.
 
 ---
 
