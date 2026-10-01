@@ -1,0 +1,20 @@
+// The settings every package shares. Each package's own tsconfig adds where its code runs.
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+
+    // TypeScript only checks the types: Vite and tsx turn the code into JavaScript.
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

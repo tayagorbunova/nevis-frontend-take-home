@@ -1,0 +1,5 @@
+// No code of its own: `tsc -b` checks the two projects below.
+{
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+}
