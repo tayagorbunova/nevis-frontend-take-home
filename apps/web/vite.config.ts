@@ -7,6 +7,6 @@ export default defineConfig({
     transformer: 'lightningcss',
   },
   server: {
-    proxy: { '/api': 'http://localhost:3210' },
+    proxy: { '/api': 'http://localhost:3001' },
   },
 });
