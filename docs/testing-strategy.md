@@ -1,6 +1,6 @@
 # Testing strategy
 
-> **Status: draft, to be revisited before tests are written.** Open questions are at the end.
+> **Status: draft.** Testing is the last step of the build, and the list is decided then. Open questions are at the end.
 
 A small set of tests that each protect a real behaviour, rather than many tests that restate the code. This doc covers the research behind the plan (done on 2026-10-01), the plan itself, what we deliberately don't test, and the guardrails against the usual problems with AI-written tests.
 
