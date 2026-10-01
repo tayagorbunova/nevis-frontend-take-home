@@ -34,6 +34,7 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 ├─ tsconfig.base.json      strict settings shared by every package
 ├─ eslint.config.js, .prettierrc, .nvmrc (24), vercel.json
 ├─ README.md, GLOSSARY.md, docs/
+├─ api/                    the Vercel function: one small file (§2.3)
 ├─ packages/contract/      the API's shape and checks, shared by both sides (§3)
 ├─ apps/api/               the Hono server (§4)
 └─ apps/web/               the React app (§5)
@@ -59,10 +60,10 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 
 **Verified first:** how Vercel serves the Hono app next to the static page inside our monorepo. A minimal deploy proved that `/`, `/docs` and `/api/client-counts` all work, before any features were built (D12):
 
-- **The function:** `api/client-counts.ts` at the repo root imports the Hono app from `apps/api` and exports it. Vercel only looks for functions in a top-level `api/` folder.
+- **The function:** `api/client-counts.js` at the repo root imports the bundled API and exports it. Vercel only looks for functions in a top-level `api/` folder.
+- **The bundle:** the API's `build` script (esbuild) packs the API, the shared contract and the data into one JavaScript file, because Vercel can't load a package that exposes TypeScript source.
 - **The page:** the web app's build output (`apps/web/dist`), served as static files.
 - **One rewrite** in `vercel.json` sends every address outside `/api/` to the page, because the app handles `/components` and `/docs` itself.
-- **Imports in server-side code name the real file** (`./app.ts`), and a TypeScript setting renames them to `.js` when Vercel compiles the function. The page's imports have no endings.
 
 ## 3. The contract (`packages/contract`)
 
@@ -98,7 +99,7 @@ The rules the schemas enforce:
 
 - `src/app.ts`: the Hono app (routes and error handling)
 - `src/server.ts`: the local Node.js entry
-- the Vercel entry: `api/client-counts.ts` at the repo root, which imports the app and exports it (§2.3, D12)
+- the Vercel entry: `api/client-counts.js` at the repo root, which imports the bundled API and exports it (§2.3, D12)
 - `src/data/client-counts.json`: the brief's payload, copied exactly, plus `"avatarUrl": "/avatars/anna-blackwood.jpg"` on Anna Blackwood (D16)
 - `src/data/firstMonth.ts`: `FIRST_MONTH = '2024-02'`. The payload has no dates, so the server owns this (D7).
 - `src/selectPeriod.ts`: the pure month-picking function
@@ -370,7 +371,7 @@ Testing is the last step of the build, and the list is decided then.
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
 - **Node 24, npm workspaces, TypeScript 6.0.3** in strict mode (not 7.0: D40).
-- **No comments in the code,** config files included. The code has to be clear by itself, and the reasons behind settings that aren't obvious are recorded in [decisions.md](decisions.md) (D33).
+- **No comments in the code,** config files included. The code has to be clear by itself, and the reasons behind settings that aren't obvious are recorded in [decisions.md](decisions.md) (D33). The one exception is the demo behaviour in the API.
 - **Linting and formatting:** ESLint 10 with typescript-eslint (type-aware) and the React Hooks rules, plus Prettier. `eslint-plugin-jsx-a11y` isn't used: its latest release supports ESLint only up to version 9 (checked 2026-10-01, D33).
 - **Root scripts:**
   - `dev`: the API and the page together, run side by side with `concurrently` (the API through `tsx watch`)
