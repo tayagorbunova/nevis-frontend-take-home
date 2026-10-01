@@ -237,6 +237,7 @@ Every task follows these, on top of its own requirements.
   - the first-load placeholders, the faded refreshing state and the error state
   - the Components and Docs page layouts
   - the dashboard at 375px
+  - the favicon: our own small icon in the design's style, shown at browser-tab size
 - [ ] Show it to the repo owner and adjust it until they approve.
 - [ ] Commit `docs: add the approved mockup of the new components`. Tasks 6–14 follow it.
 
@@ -250,6 +251,7 @@ Every task follows these, on top of its own requirements.
 - `src/app/App.tsx`, `App.module.css`, `TopBar.tsx`, `TopBar.module.css`
 - `src/ui/NavTabs/NavTabs.tsx`, `NavTabs.module.css`, `NavTabs.examples.tsx`; `src/ui/examples.ts`
 - `src/features/gallery/GalleryPage.tsx`, `GalleryPage.module.css`
+- `apps/web/public/favicon.svg`, linked from `index.html`
 - placeholders, filled in later: `src/features/clients/ClientsPage.tsx` (Task 13), `src/features/docs/DocsPage.tsx` (Task 14)
 
 **Produces:**
@@ -259,6 +261,7 @@ Every task follows these, on top of its own requirements.
 - `NavTabs` and `NavTabs.Link` (§5.6), built on wouter's `Link`. A link gets `aria-current="page"` when the location equals its `href`.
 - The examples format: `type ExamplesMeta = { title: string }`. Each `*.examples.tsx` exports `meta` and one named component per state, like Storybook stories. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
 - Browser tab titles (§5.2) with React 19's `<title>`. Check which title wins over the one in `index.html`, and remove that one if needed.
+- The favicon from the approved mockup (D39).
 
 **Steps:**
 

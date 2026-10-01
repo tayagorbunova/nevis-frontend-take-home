@@ -772,6 +772,8 @@ It stays generic, knowing nothing about clients, and TypeScript checks that ever
   - Browser tab titles: "Clients · Nevis home task", with matching titles for Components and Docs.
   - The code survives cases our data doesn't have: a company with no branches shows the company row alone, and a row with nothing to split shows a single colour.
 
+**Favicon (added 2026-10-01):** our own small icon in the design's style, for example three chart columns in the design's lavender. We don't use Nevis's favicon: the Figma file and the data were given to us to build with, but their logo wasn't, and the repo and the hosted demo are public. Without a favicon, the browser shows its default icon.
+
 **How new components get their look:** any component without a Figma design (the top bar and tabs, the dropdown, the switches, the chart label, the placeholders, the error state, the button) first gets a visual mockup of all its states, made by an agent. It's built only after the repo owner approves the mockup.
 
 ## 40. Versions: current releases, with two deliberate exceptions

@@ -143,6 +143,7 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
 - **`NavTabs` uses wouter's own `Link`,** which handles Cmd/Ctrl-click and accepts `aria-current`. React Aria's `Link` doesn't accept `aria-current` (checked in its types), and no other React Aria links are used, so React Aria's router integration isn't needed.
 - **The top bar** holds `NavTabs` (Dashboard, Components, Docs) on the left and `DemoSwitches` on the right, shown only on the Dashboard tab. On narrow screens it wraps onto two lines.
 - **Browser tab titles:** "Clients · Nevis home task", "Components · Nevis home task" and "Docs · Nevis home task".
+- **Favicon:** our own small SVG icon in the design's style (D39).
 
 ### 5.3 Page state (D28, section 1 of the design review)
 
