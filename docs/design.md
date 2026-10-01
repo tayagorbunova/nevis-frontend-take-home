@@ -54,8 +54,8 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 
 | | Page | API |
 |---|---|---|
-| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3210, `DEMO_MODE=true` |
-| **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function, `DEMO_MODE=true` |
+| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3210 |
+| **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function |
 
 **Verified first:** exactly how Vercel serves the Hono app next to the static page inside our monorepo. The first implementation task is a minimal deploy that proves `/`, `/docs` and `/api/client-counts` all work, before any features are built. Known ingredients:
 
@@ -104,10 +104,10 @@ The rules the schemas enforce:
 
 **`GET /api/client-counts?period=<Period>`:**
 
-1. **Demo** (only when `DEMO_MODE=true`):
+1. **Demo:**
    - If the `X-Demo` header contains `slow`, wait 2,000 ms.
-   - Then, if it contains `fail`, answer `500 { error: { code: 'internal_error', message: 'Simulated failure (demo mode)' } }`.
-   - Without demo mode, the header is ignored.
+   - Then, if it contains `fail`, answer `500 { error: { code: 'internal_error', message: 'Simulated failure (demo)' } }`.
+   - The header only affects the request that carries it, so one reviewer's switches never touch anyone else's requests (D11).
 2. **Check the period** against the contract. A missing period means `last-12-months`. An unknown period gets `400 { error: { code: 'invalid_period', message: 'Unknown period "…". Use one of: last-12-months, last-6-months, last-3-months, last-month.' } }`.
 3. **Pick the months.** From `FIRST_MONTH` and the data's 12 values, list the months (`2024-02` … `2025-01`), keep the last N (12, 6, 3 or 1), and trim every row's `values`, at every level, to the same N. Nothing else in the data changes: no totals are recalculated or "fixed" (D4).
 4. **Answer** `200 { months, company }` with `Cache-Control: no-store`.
@@ -379,7 +379,7 @@ Testing is the last step of the build, and the list is decided then.
   - `test`: Vitest
   - `test:e2e`: Playwright against the built app
 - **CI (GitHub Actions) on every pull request:** install (`npm ci`), `typecheck`, `lint`, `format:check`, `test`, `build`, `test:e2e`. Once the repo is public, a rule on `main` blocks merging until these checks pass (D23).
-- **Vercel:** a preview for every pull request and production from `main`, both with `DEMO_MODE=true`.
+- **Vercel:** a preview for every pull request and production from `main`.
 
 ## 10. How the work is delivered
 

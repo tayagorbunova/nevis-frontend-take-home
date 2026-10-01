@@ -179,7 +179,9 @@ It uses the design's existing styles: Inter 14px, the same thin borders and colo
 - **Slow responses:** every request takes an extra 2 seconds.
 - **Fail requests:** every request fails.
 
-When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The server only listens to these notes when demo mode is on (it is on for local development and for the hosted demo). The switches are remembered across reloads, so the first-load states can be seen too.
+When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too.
+
+**Update (2026-10-01):** the server always obeys these notes. An earlier version had a "demo mode" setting to switch that off, but nothing used the off state: the app runs as a demo everywhere, and a note only affects the request that carries it, so nobody can slow or fail the site for anyone else. A real product wouldn't ship the demo switches at all.
 
 **Why:** Reviewers can see every loading and error state without developer tools. Because the server does the work, the error travels the real path (server → network → app), exactly like a real failure would. The strip is noticeable but small, so it doesn't pull attention from the dashboard.
 
@@ -660,7 +662,7 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 - **`period`** is one of `last-12-months` (the default), `last-6-months`, `last-3-months` or `last-month`. The list lives in `packages/contract`, so the server's check and the page's dropdown can never disagree.
 - **The answer (200):** `{ "months": [...], "company": {...} }`. `months` lists the months covered, and every row's `values` is trimmed to exactly those months, in the same order. `company` is the brief's payload, plus Anna's `avatarUrl` (decision 16).
 - **Errors** share one shape, `{ "error": { "code", "message" } }`: 400 with `invalid_period` for an unknown period, and 500 with `internal_error` when something breaks or the demo "fail" switch is on. The page shows its own friendly message; the server's message is for developers.
-- **Demo notes** travel in a request header, `X-Demo: slow`, `fail`, or both. "slow" waits 2 seconds and "fail" answers with a 500. The server only listens when its `DEMO_MODE=true` setting is on (locally, and on the hosted demo).
+- **Demo notes** travel in a request header, `X-Demo: slow`, `fail`, or both. "slow" waits 2 seconds and "fail" answers with a 500. The server always obeys them (decision 11).
 - **No caching:** answers carry `Cache-Control: no-store`, so every request really reaches the server. Otherwise a cached answer could hide a switched-on demo.
 - **On the server:** the data file is the brief's payload, copied exactly, plus Anna's `avatarUrl`. The first month (`2024-02`) sits next to it as a setting, because the payload has no dates. Picking the months is one small, pure function. Anna's photo is served as a static file by the page's hosting.
 
