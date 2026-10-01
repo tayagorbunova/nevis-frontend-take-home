@@ -95,9 +95,9 @@ Every task follows these, on top of its own requirements.
 
 **Files:**
 
-- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `tsconfig.json` (for the TypeScript files at the root), `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.github/workflows/ci.yml`
+- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.github/workflows/ci.yml`
 - `apps/api/`: `package.json`, `tsconfig.json`, `src/app.ts`, `src/server.ts`
-- `apps/web/`: `package.json`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `vite.config.ts`, `index.html`, `src/main.tsx` (a placeholder), `src/vite-env.d.ts`
+- `apps/web/`: `package.json`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `vite.config.ts`, `index.html`, `src/main.tsx` (a placeholder)
 
 **Produces:**
 
@@ -111,8 +111,8 @@ Every task follows these, on top of its own requirements.
 - `tsconfig.base.json`: `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax`, `isolatedModules`, `module: esnext`, `moduleResolution: bundler`, `target: es2023`, `resolveJsonModule`, `noEmit`, `skipLibCheck`.
 - The web app's tsconfig split follows Vite's own template: `tsconfig.app.json` for browser code, `tsconfig.node.json` for config files, so Node-only code can't slip into the page.
 - `npm run dev` runs both apps with `concurrently`:
-  - the API with `tsx watch src/server.ts`, on port 3001, always in demo mode locally (§2.3)
-  - Vite on port 5173, whose `server.proxy` and `preview.proxy` send `/api` to port 3001
+  - the API with `tsx watch src/server.ts`, on port 3210, always in demo mode locally (§2.3)
+  - Vite on port 5173, whose `server.proxy` sends `/api` to port 3210 (`vite preview` reuses it)
 - Vite uses `css.transformer: 'lightningcss'`. Check that the default build target matches §5.8 (recent Chrome, Edge and Firefox; Safari 16.4 and newer), and set `build.target` if it doesn't.
 - ESLint (flat config):
   - `@eslint/js` recommended
@@ -148,7 +148,7 @@ Every task follows these, on top of its own requirements.
   - `buildCommand: "npm run build"`
   - `outputDirectory: "apps/web/dist"`
   - one rewrite sending everything except `/api/…` to `/index.html`, because the app handles `/components` and `/docs` itself
-- the root `tsconfig.json` now includes `api/`
+- a root `tsconfig.json`, for the TypeScript files in `api/`
 - Node 24 comes from `engines` in the root `package.json`
 
 **Steps:**
@@ -215,7 +215,7 @@ Every task follows these, on top of its own requirements.
 **Steps:**
 
 - [ ] Implement it.
-- [ ] Check by hand with `curl -i` against `http://localhost:3001/api/client-counts`:
+- [ ] Check by hand with `curl -i` against `http://localhost:3210/api/client-counts`:
   - no period: months `2024-02` to `2025-01`, and the data exactly as given
   - `?period=last-3-months`: months `2024-11` to `2025-01`, with every row trimmed to 3 values
   - `?period=nope`: 400 with `invalid_period`
@@ -525,6 +525,7 @@ The last stage from §10:
 
 - [ ] Once the release pull request is merged, run the §10 checklist on the production site, including on a phone.
 - [ ] Ask the repo owner to confirm, then make the repository public with `gh repo edit --visibility public --accept-visibility-change-consequences`. Check the README's links afterwards.
+- [ ] Add a rule on `main` that blocks merging until the CI checks pass (D23). It only works on public repos with a free GitHub account, which is why it comes last.
 
 ---
 

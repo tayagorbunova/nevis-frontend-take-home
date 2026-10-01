@@ -438,6 +438,8 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 **Why:** It's how real teams work, every change gets checks and a preview for free, and the history reads as a series of small, described steps.
 
+**Update (2026-10-01):** once the repo is public, a rule on `main` blocks merging until the checks pass. Merging goes live, so this keeps broken code off the site. On a free GitHub account the rule only works on public repos, so it's added when the repo goes public.
+
 **Options considered:**
 
 - Committing straight to `main`: fastest, with no ceremony, but the history is a flat list of commits with no checks or previews per change.

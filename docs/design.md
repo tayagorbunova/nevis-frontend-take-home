@@ -54,7 +54,7 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 
 | | Page | API |
 |---|---|---|
-| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3001, `DEMO_MODE=true` |
+| **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3210, `DEMO_MODE=true` |
 | **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function, `DEMO_MODE=true` |
 
 **Verified first:** exactly how Vercel serves the Hono app next to the static page inside our monorepo. The first implementation task is a minimal deploy that proves `/`, `/docs` and `/api/client-counts` all work, before any features are built. Known ingredients:
@@ -377,7 +377,7 @@ Testing is the last step of the build, and the list is decided then.
   - `format` (and `format:check`)
   - `test`: Vitest
   - `test:e2e`: Playwright against the built app
-- **CI (GitHub Actions) on every pull request:** install (`npm ci`), `typecheck`, `lint`, `format:check`, `test`, `build`, `test:e2e`.
+- **CI (GitHub Actions) on every pull request:** install (`npm ci`), `typecheck`, `lint`, `format:check`, `test`, `build`, `test:e2e`. Once the repo is public, a rule on `main` blocks merging until these checks pass (D23).
 - **Vercel:** a preview for every pull request and production from `main`, both with `DEMO_MODE=true`.
 
 ## 10. How the work is delivered
