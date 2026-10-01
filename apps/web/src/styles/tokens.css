@@ -33,4 +33,6 @@
 
   --control-height: 2.25rem;
   --opacity-disabled: 0.5;
+
+  --duration-fast: 150ms;
 }

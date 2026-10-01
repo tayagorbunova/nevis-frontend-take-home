@@ -27,11 +27,16 @@
   gap: var(--space-16);
 }
 
-.example {
+.example,
+.wideExample {
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
   margin: 0;
+}
+
+.wideExample {
+  grid-column: 1 / -1;
 }
 
 .caption {
