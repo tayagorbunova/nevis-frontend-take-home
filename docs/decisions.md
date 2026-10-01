@@ -264,6 +264,25 @@ Is 84 KB a lot? Not for this product. React itself is 67 KB, many websites load 
 
 Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 
+**Update (2026-10-01, the simple components as built):** details whose reasons aren't visible in the code:
+
+- **The switch is built from React Aria's `SwitchField` and `SwitchButton`,** the pair its documentation shows. The library still exports an older single component named `Switch`, marked as deprecated in 1.21, and our lint rejects deprecated APIs. Our own component is still called `Switch`.
+- **The dropdown's label can be left off the screen** and still name the control for screen readers. `label` is always required, so a dropdown can't be created without a name. With `hideLabel` it isn't drawn and is passed as the control's `aria-label` instead, which is how React Aria's docs describe a select with no visible label. On the dashboard the title row already says what the dropdown is for.
+- **A busy button shows the spinner and stays focusable,** so keyboard focus isn't lost while a retry runs. The spinner is announced as "Loading".
+- **Forced-colours mode,** where the system replaces our colours: cards and placeholders get a visible edge, and the switch uses the system's own colours for off and on.
+- **One global rule makes buttons use the page's font and colour.** Browsers don't do that by default.
+- **Known limits, accepted:**
+  - The line around controls is ink at 16%, about 1.4:1 against white. That's below the 3:1 guideline for a control's edge, but each control is also identified by its text. The switch's off state, which does carry meaning, is 4.8:1.
+  - While the dropdown's list is open, Chrome reports the list itself without a name, because React Aria makes the rest of the page inert. The control is named correctly.
+
+**Update (2026-10-01, one import for the components):** the rest of the app imports them as `import { Card } from "@ui"`, instead of a relative path per component such as `../../ui/Card/Card`.
+
+- **How:** `src/ui/index.ts` lists every component, and `@ui` is an alias for that file. The alias is declared once, under `paths` in `tsconfig.app.json`; Vite 8 reads it from there (`resolve.tsconfigPaths`), so nothing is repeated in the Vite config.
+- **Why:** imports stay short however deep a feature's file sits, and `index.ts` shows at a glance what the design system offers.
+- **Also considered:** `#ui`, through Node's own `imports` field in `package.json`. It needs one line and no bundler setting, and both ways were tried and work. `@ui` was chosen because it's the look most React projects use.
+- **The cost:** each new component adds a line to `index.ts`. And because one file now leads to every component, a page that needs one of them loads them all. That costs nothing here: the dashboard is the first page and uses all of them, which the design's page-weight table already assumes (§7).
+- **Inside `ui/`,** files import each other by relative path, never through `@ui`, so the list doesn't import itself in a circle.
+
 ## 14. Keyboard and screen readers: the treegrid pattern
 
 **Problem:** The brief requires that opening and closing rows works from the keyboard, and that the hierarchy reaches assistive technology such as screen readers.
@@ -729,7 +748,7 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 - the avatar with a photo and with initials
 - the dropdown and the switches
 
-It loads only when opened. Each component's examples sit in one file next to it (e.g. `TreeTable.examples.tsx`), written in the same shape as Storybook stories: a named example that renders the component in one state.
+It loads only when opened. Each component's examples sit in one file next to it (e.g. `TreeTable.examples.tsx`), written much like Storybook stories: each example is a small named component that renders the component in one state, and the file lists them in the order to show.
 
 **Why:** Reviewers see the design-system side of the work inside the app, with no extra tools to install, build or host. Nevis's job ad mentions shaping a design system.
 
@@ -824,7 +843,7 @@ Every other tool's current major version has been out for at least four weeks. T
 **Decision:** Our CSS follows a set of styling standards the repo owner uses in another project. We take them as good practice rather than rules to follow to the letter. The details are in the design doc (§5.8). We adopt:
 
 - **Units that respect the reader's text size:** rem for font sizes, spacing and widths; px only for borders, outlines and dividers; unitless line heights; no font size set on the page root.
-- **Tokens instead of raw values:** components use tokens (one layer, named by purpose) for the values the design shares: colours, text sizes, spacing, radii and borders. A size that only one component has stays in that component's CSS. (Relaxed on 2026-10-01: the stricter version, "every size is a token", filled the tokens file with values used in exactly one place.)
+- **Tokens instead of raw values:** the page root holds one layer of variables, named by purpose, for the values that two or more components share: colours, text sizes, spacing, radii and borders. A variable that a single component uses is declared in that component's CSS file, on its own element, and moves to the root when a second component needs it. A one-off size is written where it's used. (Relaxed on 2026-10-01: the stricter version, "every size is a token", filled the tokens file with values used in exactly one place. Refined the same day: a single-use variable stays a variable, but lives with its component, so the tokens file shows only what's really shared.)
 - **Closed `ui/` components:** code that uses them can't restyle them. They accept no `className` or `style` props, and every allowed variation is an explicit option the component offers, such as `variant="secondary"`. Components have no outer margins; the parent's layout places them (e.g. with `gap`). This keeps every button looking like every other button, and when one looks odd, there's only one place to check. The cost is that a one-off need means adding an option. (Confirmed separately, after considering open components and a "`className` for placement only" middle ground.)
 - **React Aria states** styled through their data attributes, so hover doesn't stick after a tap on touch screens. Every state of every interactive component is styled and shown in the Components tab.
 - **Layout that doesn't break:** rem media queries, no fixed heights on text, long names wrap.

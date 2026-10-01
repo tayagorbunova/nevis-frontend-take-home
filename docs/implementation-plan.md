@@ -30,11 +30,12 @@ Every task follows these, on top of its own requirements.
   - The apps import `@nevis/contract` and never each other. The one exception: the web app's test setup (`apps/web/src/test/`, from Task 15) imports the API app.
   - Only `src/ui/` imports `react-aria-components`, `react-aria` and `recharts`.
   - `src/ui/` never imports from `src/features/` or `src/app/`.
+  - Outside `src/ui/`, components are imported from `@ui` (`import { Card } from "@ui"`), and every new component gets its line in `src/ui/index.ts`. Inside `src/ui/`, files import each other by relative path, never through `@ui`. This one is a convention, not a lint rule.
   - Only data-loading code (`features/*/api/`) calls `fetch`.
 - **The UI only presents (Principles, D4, D7):** a total shown anywhere is a row's own number from the server, and months come from the server's answer. Nothing is summed, fixed or assumed.
 - **Words (D6):** the page's code says "advisor" and "channel", and only `toClientTree` reads `employees` and `channels` there. The contract and the server use the API's own field names.
 - **Styles (§5.8, D41):**
-  - use tokens for the values the design shares (colours, text sizes, spacing, radii, borders); a size only one component has stays in its CSS; rem units (px only for borders, outlines and dividers)
+  - `:root` holds only variables that two or more components share (colours, text sizes, spacing, radii, borders); a variable a single component uses is declared in that component's CSS file, on its own element, and a one-off size is written where it's used; colours are always variables; rem units (px only for borders, outlines and dividers)
   - `ui/` components are closed: no `className` or `style` props, no outer margins
   - React Aria parts are styled through their state attributes; `:hover` appears only inside `@media (hover: hover)`
   - animate only `transform` and `opacity`, with motion off under reduced motion
@@ -266,7 +267,7 @@ Every task follows these, on top of its own requirements.
 - The tokens named in §5.8, plus `--color-row-hover: #f6f6f6`: the ink at 4% on white, precomputed as an opaque colour so the pinned table column covers what scrolls under it.
 - `App` routes `/`, `/components` and `/docs`, and redirects any other address to `/`. The last two pages load on demand (`lazy`).
 - `NavTabs` and `NavTabs.Link` (§5.6), built on wouter's `Link`. A link gets `aria-current="page"` when the location equals its `href`.
-- The examples format: `type ExamplesMeta = { title: string }`. Each `*.examples.tsx` exports `meta` and one named component per state, like Storybook stories. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
+- The examples format: each `*.examples.tsx` exports `meta` (`{ title: string }`) and `examples`, an object of small named components, one per state, in the order to show them. The functions are written in the file in that same order. `GalleryPage` loads the files with `import.meta.glob('../../ui/**/*.examples.tsx', { eager: true })` and shows one section per file.
 - Browser tab titles (§5.2) with React 19's `<title>`. Check which title wins over the one in `index.html`, and remove that one if needed.
 - The favicon from the approved mockup: three rising columns, each stacked in the first three chart colours (§5.9).
 
@@ -277,11 +278,11 @@ Every task follows these, on top of its own requirements.
 
 ### Task 7: The simple components
 
-**Delivers:** `Card`, `Button`, `Avatar`, `Skeleton`, `Spinner`, `Switch` and `Select`, each in `src/ui/<Name>/` with `.tsx`, `.module.css` and `.examples.tsx`, as in §5.6 and the approved mockup.
+**Delivers:** `Card`, `Button`, `Avatar`, `Skeleton`, `Spinner`, `Switch` and `Select`, each in `src/ui/<Name>/` with `.tsx`, `.module.css` and `.examples.tsx`, as in §5.6 and the approved mockup. Also `src/ui/index.ts` and the `@ui` alias (§5.1): `paths` in `tsconfig.app.json`, read by Vite through `resolve.tsconfigPaths`.
 
 **Produces** (props):
 
-- `Card`: `children`, `variant?: 'padded' | 'flush'`. The chart card has padding, the table card has none.
+- `Card`: `children`, `variant?: 'padded' | 'unpadded'`. The chart card has padding, the table card has none.
 - `Button`: `children`, `onPress`, `isPending?`. React Aria's busy state keeps the button focusable and tells screen readers it's busy; "Try again" uses it.
 - `Avatar`: `name`, `src?`. It shows the photo, or the initials of the first and last words; it's hidden from screen readers.
 - `Skeleton`: `width`, `height`, `radius?`. Its pulse is off under reduced motion.
@@ -496,7 +497,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 ### Task 14: The Docs tab
 
-**Files:** `apps/web/src/features/docs/DocsPage.tsx`, `DocsPage.module.css`; `vite.config.ts` gets an `@docs` alias for the repo-root `docs/` folder.
+**Files:** `apps/web/src/features/docs/DocsPage.tsx`, `DocsPage.module.css`; an `@docs` alias for the repo-root `docs/` folder, declared under `paths` in `tsconfig.app.json` like `@ui` (§5.1).
 
 **Notes:**
 

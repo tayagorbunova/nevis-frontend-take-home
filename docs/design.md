@@ -124,7 +124,8 @@ Any unexpected error answers `500` with `internal_error` in the same error shape
 src/
 ├─ main.tsx            fonts, global styles, the data cache (QueryClient), the router, <App/>
 ├─ app/                App (page state, the three tab addresses), TopBar
-├─ ui/                 our design system (§5.6); each component has .tsx, .module.css and .examples.tsx
+├─ ui/                 our design system (§5.6); each component has .tsx, .module.css and .examples.tsx;
+│                      index.ts lists what the rest of the app imports
 ├─ features/
 │   ├─ clients/        ClientsPage, ClientsTable, ClientsChart, PeriodSelect,
 │   │                  api/ (fetchClientCounts, useClientCounts), model/ (the pure rules)
@@ -134,6 +135,8 @@ src/
 └─ styles/             tokens.css, global.css
 public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
 ```
+
+**Imports from `ui/`** (D13): the rest of the app imports components from one place, `import { Card } from "@ui"`. `@ui` is an alias for `src/ui/index.ts`, which lists every component. The alias is declared once, under `paths` in `tsconfig.app.json`, and Vite reads it from there (`resolve.tsconfigPaths`). Inside `ui/`, files import each other by relative path.
 
 ### 5.2 Addresses and the top bar (D21, D30, D37)
 
@@ -216,12 +219,12 @@ Each has its examples file for the Components tab.
 | `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]` | See below |
 | `StackedColumnChart` | props + render function | `title`, `description`, `monthLabels`, `shortMonthLabels`, `series`, `renderLabel(monthIndex)` | See below; a `<figure>` whose caption is the title |
 | `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>` built on wouter's `Link` and current location; the current tab gets `aria-current="page"`; styled per D39 |
-| `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); the label can be visually hidden |
-| `Switch` | plain props | `children` (label), `isSelected`, `onChange` | React Aria `Switch` |
-| `Button` | plain props | `children`, `onPress`, `isPending?` | React Aria `Button`, one style; the busy state keeps focus and is announced (used by "Try again") |
+| `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange`, `isDisabled?` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); with `hideLabel` the label isn't drawn and becomes the control's `aria-label` |
+| `Switch` | plain props | `children` (label), `isSelected`, `onChange`, `isDisabled?` | React Aria's `SwitchField` and `SwitchButton`, the pair its docs show (the library's older single `Switch` export is deprecated in 1.21) |
+| `Button` | plain props | `children`, `onPress`, `isPending?`, `isDisabled?` | React Aria `Button`, one style; the busy state keeps focus and is announced (used by "Try again") |
 | `Avatar` | plain props | `name`, `src?` | 20px circle; the photo when `src` is given, otherwise initials on a grey tint; hidden from screen readers (D16) |
-| `Card` | plain props | `children`, `variant?` (`padded` or `flush`) | White, 8px corners; the chart card has padding, the table card has none |
-| `Skeleton` | plain props | `width`, `height`, `radius?` | Gentle pulse, none with reduced motion |
+| `Card` | plain props | `children`, `variant?` (`padded` or `unpadded`) | White, 8px corners; the chart card has padding, the table card has none |
+| `Skeleton` | plain props | `width`, `height`, `radius?` (`small`, `medium` or `large`) | Gentle pulse, none with reduced motion |
 | `Spinner` | plain props | `label` | The small "new period loading" indicator |
 
 **`TreeTable`** wraps React Aria's `Table` in tree mode (`treeColumn`, `expandedKeys`, `onExpandedChange`, row `onAction`):
@@ -277,29 +280,29 @@ Each has its examples file for the Components tab.
   - loads `react-markdown` and `remark-gfm` on demand and renders `docs/decisions/product.md` and `docs/decisions/technical.md` as Markdown files imported at build time (D20, D31)
   - until the final docs stage creates those two files, it renders `docs/decisions.md`
   - Vite is allowed to read the repo-root `docs/` folder
-- **`GalleryPage`:** collects every `src/ui/**/*.examples.tsx` with Vite's `import.meta.glob`, and shows one section per component with its named examples.
+- **`GalleryPage`:** collects every `src/ui/**/*.examples.tsx` with Vite's `import.meta.glob`, and shows one section per component with its named examples, in the order the file lists them.
 
 ### 5.8 Styles (D25, D32, D39, D41)
 
-**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. This list says which Figma variable each comes from (D25, D41); the CSS itself has no comments:
+**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. Only what two or more components share lives there; a variable with a single user is declared in that component's own CSS file (see the rules below). This list says which Figma variable each value comes from (D25, D41); the CSS itself has no comments:
 
 - **Colours:**
   - `--color-text`: #141413, Content/Primary
   - `--color-text-muted`: the ink at 60%, Content/Secondary
   - `--color-border`: the ink at 8%, Outline/Line solid
   - `--color-gridline`: the ink at 16%, Outline/Line dotted
-  - `--color-row-hover`: the ink at 4%, Surface/Secondary
+  - `--color-row-hover`: `#f6f6f6`, Surface/Secondary. That's the ink at 4% on white, written as an opaque colour so the pinned table column covers what scrolls under it
   - `--color-page`: #F7F5ED, Background/Primary
   - `--color-card`: #FFFFFF, Background/Secondary
   - `--color-chart-1` … `--color-chart-5` (D17) and `--color-chart-other`, a neutral grey
 - **Type:** Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25).
 - **Spacing** in rem, for example 0.5, 1, 1.125, 1.5 and 1.75rem (8, 16, 18, 24 and 28px).
-- **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), motion durations.
+- **Other:** radii (2, 4, 8px), the 1px border and the focus ring (2px, ink).
 - **Figma's px values become rem** (px ÷ 16), so the layout grows with the reader's text size. For example, the 264px name column becomes 16.5rem, and the 56px row becomes a 3.5rem *minimum* height. Borders, outlines and dividers stay in px.
 
 **Rules for component CSS** (D41):
 
-- Components use tokens for the values the design shares: colours, text sizes, spacing, radii, borders and the focus ring. A size that only one component has, such as the top bar's height, stays in that component's CSS. Raw colours never appear in component CSS.
+- `:root` holds only the variables that two or more components share: colours, text sizes, spacing, radii, borders and the focus ring. A variable that a single component uses is declared in that component's CSS file, on the component's own element: for example `--color-pressed` in the button's file and `--duration-spin` in the spinner's. It moves to `:root` when a second component needs it. A one-off size is written where it's used, such as the top bar's height. Colours are always variables, never written straight into a property.
 - `ui/` components are closed: no `className` or `style` props, so looks change only through props such as `variant`.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
@@ -329,13 +332,18 @@ Figma covers the title, the chart card and the table card. Everything else was m
 
 - `--color-control-border`: ink at 16%, the line around controls and floating cards. Figma's own line (ink at 8%) nearly disappears on a white control inside a white card.
 - `--color-tint`: ink at 8%, for the initials circle, the placeholders and inline code.
-- `--color-pressed`: ink at 8%.
-- `--color-switch-off`: ink at 60%.
-- `--shadow-floating`: `0 0.25rem 1rem` in ink at 10%, only for things that float.
 - `--opacity-refreshing`: 0.6.
 - `--control-height`: 2.25rem (36px).
 - `--color-chart-other`: `#c7c7c6`.
-- Motion: 150ms for small changes, 800ms per spinner turn, 1s per placeholder pulse.
+
+**Variables with a single user so far,** each declared in its component's CSS file (§5.8):
+
+- Button: `--color-pressed`, ink at 8%.
+- Switch: `--color-switch-off`, ink at 60%, and `--duration-fast`, 150ms for the thumb's slide.
+- Dropdown list: `--shadow-floating`, `0 0.25rem 1rem` in ink at 10%. The chart label has the same shadow, so it moves to `:root` when the chart is built.
+- Spinner: `--duration-spin`, 800ms per turn.
+- Placeholder: `--duration-pulse`, 1s per pulse.
+- Components page: `--space-32` (2rem between sections), and `--font-size-heading` with `--line-height-heading` (the 20/28 section names).
 
 **Top bar and tabs:**
 
@@ -365,6 +373,8 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - A white card, at least 10.5rem wide, with the control border, 0.5rem corners, 0.75rem padding and the floating shadow.
 - It lists the month (12/16 at 60% ink), the row's own total (14/20), then each part: its 8×8 colour square, its name at 60% ink and its number in full ink, right-aligned in tabular figures.
 - The active column gets a band in the row-hover shade behind it, as high as the plot.
+
+**Disabled controls** (button, switch, dropdown): the whole control at half opacity, with the normal arrow cursor and no hover or pressed shade. In forced-colours mode they use the system's grey text colour.
 
 **Avatar initials:** 9px text at weight 500 in full ink, on ink at 8%.
 
