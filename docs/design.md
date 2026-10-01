@@ -299,7 +299,7 @@ Each has its examples file for the Components tab.
 
 **Rules for component CSS** (D41):
 
-- Components reference tokens, never raw colours or one-off sizes. Obvious literals like `0`, `100%`, `1fr` and `50%` stay inline.
+- Components use tokens for the values the design shares: colours, text sizes, spacing, radii, borders and the focus ring. A size that only one component has, such as the top bar's height, stays in that component's CSS. Raw colours never appear in component CSS.
 - `ui/` components are closed: no `className` or `style` props, so looks change only through props such as `variant`.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.

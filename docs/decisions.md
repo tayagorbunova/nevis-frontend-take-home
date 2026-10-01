@@ -434,6 +434,15 @@ Each tab has its own address (`/` and `/docs`), so a reviewer can be sent a link
 
 - Tabs inside the page, under the "Clients" title, styled like the design: looks integrated, but "Docs" isn't something a Nevis user would ever see, and it changes the designed page.
 
+**Update (2026-10-01, as built):** details in the code whose reasons aren't obvious:
+
+- **An unknown address goes to `/` by replacing the history entry,** so Back doesn't bounce off it again.
+- **Clicking the tab you're already on replaces the history entry too,** as a normal link would, so Back still goes to the previous page.
+- **A tab asks the router whether its address is the current one,** so the tab and the page shown always agree, also for `/components/` with a trailing slash.
+- **The current tab's underline is drawn as a border,** not a background, so it stays visible in the system's forced-colours mode. It sits 1px lower than the link, to cover the bar's own line.
+- **Each page sets its own browser tab title.** React places it in the page's `<head>` ahead of the general one from `index.html`, and browsers use the first.
+- **The examples of the tabs on the Components page each get their own pretend address,** so clicking a tab inside an example doesn't navigate the real page.
+
 ## 22. One repository, three packages
 
 **Decision:** A monorepo using npm's built-in workspaces, with no extra build tools:
@@ -815,7 +824,7 @@ Every other tool's current major version has been out for at least four weeks. T
 **Decision:** Our CSS follows a set of styling standards the repo owner uses in another project. We take them as good practice rather than rules to follow to the letter. The details are in the design doc (§5.8). We adopt:
 
 - **Units that respect the reader's text size:** rem for font sizes, spacing and widths; px only for borders, outlines and dividers; unitless line heights; no font size set on the page root.
-- **Tokens instead of raw values:** components use tokens (one layer, named by purpose) for colours and sizes, never raw values.
+- **Tokens instead of raw values:** components use tokens (one layer, named by purpose) for the values the design shares: colours, text sizes, spacing, radii and borders. A size that only one component has stays in that component's CSS. (Relaxed on 2026-10-01: the stricter version, "every size is a token", filled the tokens file with values used in exactly one place.)
 - **Closed `ui/` components:** code that uses them can't restyle them. They accept no `className` or `style` props, and every allowed variation is an explicit option the component offers, such as `variant="secondary"`. Components have no outer margins; the parent's layout places them (e.g. with `gap`). This keeps every button looking like every other button, and when one looks odd, there's only one place to check. The cost is that a one-off need means adding an option. (Confirmed separately, after considering open components and a "`className` for placement only" middle ground.)
 - **React Aria states** styled through their data attributes, so hover doesn't stick after a tap on touch screens. Every state of every interactive component is styled and shown in the Components tab.
 - **Layout that doesn't break:** rem media queries, no fixed heights on text, long names wrap.
