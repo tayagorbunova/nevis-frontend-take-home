@@ -278,7 +278,7 @@ Each has its examples file for the Components tab.
 
 ### 5.8 Styles (D25, D32, D39, D41)
 
-**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. Each notes the Figma variable it comes from (D25, D41):
+**Tokens** live in `styles/tokens.css` on `:root`: one layer, named by purpose, holding the final values. This list says which Figma variable each comes from (D25, D41); the CSS itself has no comments:
 
 - **Colours:**
   - `--color-text`: #141413, Content/Primary
@@ -368,6 +368,7 @@ Testing is the last step of the build, and the list is decided then.
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
 - **Node 24, npm workspaces, TypeScript 6.0.3** in strict mode (not 7.0: D40).
+- **No comments in the code,** config files included. The code has to be clear by itself, and the reasons behind settings that aren't obvious are recorded in [decisions.md](decisions.md) (D33).
 - **Linting and formatting:** ESLint 10 with typescript-eslint (type-aware) and the React Hooks rules, plus Prettier. `eslint-plugin-jsx-a11y` isn't used: its latest release supports ESLint only up to version 9 (checked 2026-10-01, D33).
 - **Root scripts:**
   - `dev`: the API and the page together, run side by side with `concurrently` (the API through `tsx watch`)

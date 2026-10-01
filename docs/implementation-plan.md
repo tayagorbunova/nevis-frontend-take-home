@@ -40,6 +40,8 @@ Every task follows these, on top of its own requirements.
   - animate only `transform` and `opacity`, with motion off under reduced motion
 - **Components without a Figma design** follow the mockup approved in Task 5.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
+- **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers.
+- **Nothing for problems that don't exist yet:** no defensive code for cases that can't happen, and no rules or settings without a use today. A review finding becomes a change only if it fixes something broken or visible today, or makes the code simpler.
 - **Tests:** none before Task 15, where the list is agreed with the repo owner and then written.
 - **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm run build` (plus the tests, once Task 15 adds them), then a commit with a conventional message.
 - **Every UI change gets the §10 check:**

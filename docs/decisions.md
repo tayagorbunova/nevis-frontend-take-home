@@ -463,7 +463,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 25. Styles are plain CSS modules
 
-**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables: one layer, named by purpose, each noting which Figma variable it comes from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
+**Decision:** Each component has its own style file (e.g. `Table.module.css`), and its class names are private to that component, so styles never leak between components. The design's values (colours, fonts, spacing) live in one file as CSS variables: one layer, named by purpose. The design doc lists which Figma variable each one comes from (e.g. `--color-text-muted` is Figma's Content/Secondary at 60%). React Aria marks states on elements (hovered, focused, open), and our styles target those markers directly.
 
 **Why:** Modern CSS has what we need built in, including nesting and variables. Vite supports CSS modules with no setup. That's one tool fewer to install, configure and explain.
 
@@ -613,6 +613,21 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 **One caveat:** the usual accessibility lint plugin (`eslint-plugin-jsx-a11y`, 55M weekly) hasn't had a release since October 2024. We check that it works with ESLint 10 during setup and drop it if it doesn't. React Aria and the automated accessibility checks in tests cover the same ground.
 
 **Update (2026-10-01, while planning):** its latest release (6.10.2) supports ESLint only up to version 9, so it's dropped.
+
+**Update (2026-10-01, the scaffold):** what the tooling does beyond the presets, and why:
+
+- **No comments in the code,** config files included. The code has to be clear by itself, so reasons like the ones below live here.
+- **Three rules from typescript-eslint's strict presets are adjusted:**
+  - Object shapes are written with `type`, never `interface`, so there's one convention.
+  - Numbers are allowed inside template strings, because they're safe there. The preset's other options for that rule are listed in full, because ESLint replaces a rule's options instead of merging them.
+  - One-line handlers such as `() => setCount(1)` are allowed, as is usual in React.
+- **Lint warnings fail the check too** (`--max-warnings 0`).
+- **ESLint enforces the folder boundaries** from the design doc (§2.2), so crossing one fails the check. ESLint keeps only the import restrictions of the last config that matches a file, so the web app's files are split into groups that don't overlap, each with its full list.
+- **Plain `.js` files get no type-aware rules,** because they belong to no TypeScript project. Today that's only the ESLint config itself.
+- **TypeScript only checks types** (`noEmit`): Vite and tsx turn the code into JavaScript. Each package's own config adds where its code runs, which decides whether it gets browser types or Node types.
+- **Prettier leaves the Markdown docs alone.** They're hand-written, and Prettier would rewrite every table.
+- **CI's token can only read the repository,** the least it needs.
+- **npm's install-script approvals** (`allowScripts` in `package.json`) name the two packages allowed to run a script on install: esbuild and fsevents, both brought in by Vite and tsx.
 
 **Why:** It's the standard reviewers expect, and the type-aware checks catch the bugs that matter most in our data-loading code.
 
