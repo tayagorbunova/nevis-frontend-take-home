@@ -2,9 +2,5 @@ package-lock.json
 dist
 coverage
 private
-
-# The docs are hand-written; Prettier would rewrite every table.
 *.md
-
-# Scratch folder of the build process, git-ignored by its own nested .gitignore.
 .superpowers

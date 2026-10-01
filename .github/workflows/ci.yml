@@ -3,7 +3,6 @@ name: CI
 on:
   pull_request:
 
-# Least privilege: the workflow's token can only read the repository.
 permissions:
   contents: read
 

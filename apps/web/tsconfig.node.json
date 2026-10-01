@@ -1,4 +1,3 @@
-// The config files. They run in Node, so they get Node types and no DOM types.
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {

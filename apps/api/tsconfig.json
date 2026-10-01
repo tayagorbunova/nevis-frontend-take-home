@@ -1,4 +1,3 @@
-// The server's code. It runs in Node, so it gets Node types and no DOM types.
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {

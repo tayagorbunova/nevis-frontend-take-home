@@ -1,4 +1,3 @@
-// The page's code. It runs in the browser, so it gets DOM types and no Node types.
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
