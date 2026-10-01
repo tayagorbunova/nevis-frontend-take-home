@@ -363,7 +363,7 @@ The plan, the research behind it, and what we deliberately don't test are in [te
   - MSW passes the simulated browser's requests to the real Hono app.
 - **Every test is seen failing once**, by breaking one line on purpose.
 
-The list is revisited before tests are written.
+Testing is the last step of the build, and the list is decided then.
 
 ## 9. Tools, scripts and CI (D23, D33, D40)
 
@@ -391,7 +391,7 @@ The list is revisited before tests are written.
   - forced colours and reduced motion, emulated in the browser's developer tools
   - the contrast of any new colour pair
   - on a phone: no hover state sticking after a tap
-- **The tests follow the agreed list** (§8), after it's revisited.
+- **Tests come last** (§8): the list is agreed at that step, then the tests are written.
 - **The last stage covers the docs and release:**
   - split and condense `decisions.md` into `docs/decisions/product.md` and `technical.md` (D20)
   - write the README:

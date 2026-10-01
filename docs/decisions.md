@@ -664,6 +664,8 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 **Open questions:** whether server tests are in scope for a frontend assignment (the whole-app tests already run through the real server logic), and whether the list is right. Both are revisited before tests are written.
 
+**Update (2026-10-01):** testing moves to the last step of the build, and the list is decided then.
+
 **Options considered:**
 
 - Unit and component tests only: covers the brief, but real-browser behaviour (layout at 375px, real focus) goes unchecked.
