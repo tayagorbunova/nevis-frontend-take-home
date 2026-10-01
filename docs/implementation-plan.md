@@ -14,10 +14,11 @@
 
 **How detailed this plan is:** each task says what it delivers, which files it touches, the names and types other tasks rely on, the facts already verified, and how to check the result. It doesn't spell out the code: whoever implements a task writes it, following the design sections the task points to. "§" refers to [design.md](design.md), "D" to [decisions.md](decisions.md).
 
+**How it runs:** one task at a time. After each task, the repo owner reviews its changes before the next one starts.
+
 ## Before starting
 
-- PR #1 (the docs and this plan) is merged, and every task branch starts from `main`.
-- The test list is agreed (Task 0).
+PR #1 (the docs and this plan) is merged, and every task branch starts from `main`.
 
 ## Global constraints
 
@@ -26,7 +27,7 @@ Every task follows these, on top of its own requirements.
 - **Versions:** Node 24; TypeScript `~6.0.3`, because typescript-eslint 8.71 requires a version below 6.1; MSW `~2.15.0`, not 3; everything else as in §11.
 - **TypeScript:** strict mode plus `noUncheckedIndexedAccess`. No `any`, and no `!` assertions to silence an error.
 - **Boundaries (§2.2), enforced by ESLint from Task 1:**
-  - The apps import `@nevis/contract` and never each other. The one exception: the web app's test setup (`apps/web/src/test/`) imports the API app.
+  - The apps import `@nevis/contract` and never each other. The one exception: the web app's test setup (`apps/web/src/test/`, from Task 15) imports the API app.
   - Only `src/ui/` imports `react-aria-components`, `react-aria` and `recharts`.
   - `src/ui/` never imports from `src/features/` or `src/app/`.
   - Only data-loading code (`features/*/api/`) calls `fetch`.
@@ -39,11 +40,8 @@ Every task follows these, on top of its own requirements.
   - animate only `transform` and `opacity`, with motion off under reduced motion
 - **Components without a Figma design** follow the mockup approved in Task 5.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
-- **Tests ([testing-strategy.md](testing-strategy.md)):**
-  - only the agreed list, and MSW is the only fake
-  - expected values are literal numbers from the brief
-  - each test is seen failing once: break the line that prevents "the bug it catches", read the failure, restore the line
-- **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm test`, then a commit with a conventional message.
+- **Tests:** none before Task 15, where the list is agreed with the repo owner and then written.
+- **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm run build` (plus the tests, once Task 15 adds them), then a commit with a conventional message.
 - **Every UI change gets the §10 check:**
   - widths of 320px, 375px and a wide window
   - large text and 200% zoom
@@ -52,7 +50,7 @@ Every task follows these, on top of its own requirements.
   - the contrast of any new colour pair
   - a phone
 - **Git:**
-  - one branch and pull request per group below, with a description of one to three lines
+  - one branch and pull request per group below, with a description of one to three plain lines
   - the repo owner merges
   - nothing from `private/` is ever committed
 
@@ -65,15 +63,15 @@ Every task follows these, on top of its own requirements.
   - ← closes an open row; on a closed row it moves to the parent.
 - **React Aria's `Select`** uses `value`/`onChange`; `selectedKey` is deprecated.
 - **React Aria's `Link`** doesn't accept `aria-current`, so `NavTabs` uses wouter's `Link`. wouter's `Link` passes `aria-current` through and ignores clicks with modifier keys.
-- **Recharts 3.10 in the simulated browser (jsdom)**, so test #8 runs in Vitest:
-  - With a `ResizeObserver` stub, `<BarChart responsive>` draws its bars.
+- **Recharts 3.10:**
+  - `<BarStack radius={4}>` rounds each whole column.
   - Its keyboard layer is on by default: the SVG is one Tab stop (`tabindex="0"`, `role="application"`), and ← / → move the label.
   - Passing `active={false}` to `Tooltip` hides the label, which is how Escape works.
-  - `<BarStack radius={4}>` rounds each whole column.
   - `isAnimationActive` defaults to `'auto'`, which respects reduced motion.
-- **MSW 2.15 → Hono:** `setupServer(http.all('*/api/*', ({ request }) => app.fetch(request)))` sends the simulated browser's requests, headers included, to the real app.
-- **Hono:** tests call `app.request('/api/…')` without starting a server.
 - **Tooling:** `eslint-plugin-jsx-a11y` 6.10 supports ESLint only up to version 9, so it isn't installed (D33).
+- **For the testing step (Task 15):**
+  - Recharts draws its bars and handles its keyboard in the simulated browser (jsdom), given a `ResizeObserver` stub.
+  - MSW 2.15 can send the simulated browser's requests, headers included, to the real Hono app: `setupServer(http.all('*/api/*', ({ request }) => app.fetch(request)))`.
 
 ## Pull requests
 
@@ -84,25 +82,12 @@ Every task follows these, on top of its own requirements.
 | The approved mockup (docs only) | 5 |
 | App shell and simple components | 6, 7 |
 | Tree table and chart | 8, 9 |
-| Dashboard | 10–14 |
-| Docs tab | 15 |
-| Real-browser test | 16 |
-| Release | 17, 18 |
+| Dashboard | 10–13 |
+| Docs tab | 14 |
+| Tests | 15 |
+| Release | 16, 17 |
 
 ---
-
-### Task 0: Agree the final test list
-
-[testing-strategy.md](testing-strategy.md) is a draft. Before any test is written:
-
-- [ ] Go through it with the repo owner, one question at a time:
-  - Are the API tests (#1–#4) in scope? #1 and #2 are largely covered by #6 and #9; #3 and #4 check things nothing else does.
-  - Should test #11 also run an axe accessibility scan on each tab? D33 counts on "automated accessibility checks in tests" in place of the dropped lint plugin.
-  - Is anything missing or unnecessary? Every change needs a reason.
-- [ ] Update testing-strategy.md (the list and its status line) and D36.
-- [ ] Commit `docs: agree the test list`.
-
-The tasks below name tests by number. Skip any test the agreed list drops.
 
 ### Task 1: Scaffold the monorepo and tooling
 
@@ -110,16 +95,16 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 
 **Files:**
 
-- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `tsconfig.json` (for the TypeScript files at the root), `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `vitest.config.ts`, `.github/workflows/ci.yml`
+- Root: `package.json`, `package-lock.json`, `.nvmrc` (`24`), `tsconfig.base.json`, `tsconfig.json` (for the TypeScript files at the root), `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.github/workflows/ci.yml`
 - `apps/api/`: `package.json`, `tsconfig.json`, `src/app.ts`, `src/server.ts`
 - `apps/web/`: `package.json`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `vite.config.ts`, `index.html`, `src/main.tsx` (a placeholder), `src/vite-env.d.ts`
 
 **Produces:**
 
 - Package names `@nevis/api` and `@nevis/web` (`@nevis/contract` comes in Task 3).
-- `@nevis/api` exports its TypeScript source directly (`"exports": { ".": "./src/app.ts" }`), with no build step, because Vite, tsx and TypeScript all read the source. The web app lists it as a dev dependency, for its tests only.
+- `@nevis/api` exports its TypeScript source directly (`"exports": { ".": "./src/app.ts" }`), with no build step, because Vite, tsx and TypeScript all read the source.
 - `createApp({ demoMode }: { demoMode: boolean })` in `apps/api/src/app.ts`. For now it has one stub route, `GET /api/client-counts`, answering `{ demoMode }`.
-- The root scripts from §9: `dev`, `build`, `typecheck`, `lint`, `format`, `format:check` and `test` (`test:e2e` comes in Task 16).
+- The root scripts from §9: `dev`, `build`, `typecheck`, `lint`, `format` and `format:check`. (`test` and `test:e2e` come with Task 15.)
 
 **Settings to get right:**
 
@@ -136,8 +121,7 @@ The tasks below name tests by number. Skip any test the agreed list drops.
   - `no-restricted-imports` rules for the boundaries in the Global constraints
   - no formatting rules: Prettier formats
 - Prettier: `singleQuote: true`, `printWidth: 100`. It ignores `package-lock.json`, `dist`, `coverage` and `private`.
-- Vitest: a root `vitest.config.ts` with `projects` for `apps/api` (Node) and `apps/web` (jsdom), and `passWithNoTests` until tests exist.
-- CI runs on `pull_request`: `actions/setup-node` with the version from `.nvmrc` and the npm cache, `npm ci`, then `typecheck`, `lint`, `format:check`, `test` and `build`.
+- CI runs on `pull_request`: `actions/setup-node` with the version from `.nvmrc` and the npm cache, `npm ci`, then `typecheck`, `lint`, `format:check` and `build`.
 
 **Steps:**
 
@@ -172,7 +156,7 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 - [ ] Push the branch, open the pull request and wait for the preview.
 - [ ] Check on the preview: `/` and a direct visit to `/docs` show the page, and `/api/client-counts` answers `{"demoMode":true}`.
 - [ ] **If the function fails to start:** Vercel compiles a function's TypeScript files one by one, so imports without file extensions, or a workspace package whose entry is a `.ts` file, can fail at runtime. Try in this order:
-  1. explicit `.js` extensions on the relative imports in `apps/api` and `packages/contract`
+  1. explicit `.js` extensions on the relative imports in `apps/api` (and later in `packages/contract`)
   2. bundling the function during the build and publishing it through Vercel's Build Output API
 
   Record what worked as a short update under D12.
@@ -203,14 +187,13 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 **Steps:**
 
 - [ ] Write the schemas; the types come from `z.infer`.
-- [ ] No tests of their own: testing-strategy.md leaves out "types and schema definitions", and Tasks 4 and 13 exercise them.
 - [ ] Commit `feat(contract): add the API contract`.
 
 ### Task 4: The API
 
-**Delivers:** `GET /api/client-counts?period=…`, exactly as §4 describes, and the agreed API tests.
+**Delivers:** `GET /api/client-counts?period=…`, exactly as §4 describes.
 
-**Files:** `apps/api/src/app.ts`, `src/selectPeriod.ts`, `src/data/client-counts.json`, `src/data/firstMonth.ts`, `src/server.ts`; tests in `src/app.test.ts`.
+**Files:** `apps/api/src/app.ts`, `src/selectPeriod.ts`, `src/data/client-counts.json`, `src/data/firstMonth.ts`, `src/server.ts`.
 
 **Produces:**
 
@@ -221,7 +204,7 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 **Notes:**
 
 - `client-counts.json` is the payload from the brief (`private/Nevis Frontend Home Assignment.pdf`), copied exactly, plus `"avatarUrl": "/avatars/anna-blackwood.jpg"` on Anna Blackwood (D16).
-- `app.ts` stays runtime-neutral, because the web tests type-check and run it too: no `node:` imports, and a `setTimeout` promise for the 2-second wait. `server.ts` is the only Node-specific file.
+- `app.ts` stays runtime-neutral, because the web app's tests may run it too: no `node:` imports, and a `setTimeout` promise for the 2-second wait. `server.ts` is the only Node-specific file.
 - One middleware sets `Cache-Control: no-store` on every answer. Error bodies are checked against the contract with `satisfies ApiErrorBody`.
 - `selectPeriod`:
   - lists the months from `FIRST_MONTH` and the number of values
@@ -231,9 +214,13 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 
 **Steps:**
 
-- [ ] Write tests #1–#4 with `app.request(…)` and see them fail against the stub.
-- [ ] Implement until they pass. Break one line per test, read the failure, restore.
-- [ ] Check by hand: `curl -i -H 'X-Demo: slow, fail' 'http://localhost:3001/api/client-counts?period=last-3-months'` answers 500 after 2 seconds.
+- [ ] Implement it.
+- [ ] Check by hand with `curl -i` against `http://localhost:3001/api/client-counts`:
+  - no period: months `2024-02` to `2025-01`, and the data exactly as given
+  - `?period=last-3-months`: months `2024-11` to `2025-01`, with every row trimmed to 3 values
+  - `?period=nope`: 400 with `invalid_period`
+  - `-H 'X-Demo: slow, fail'`: 500 after 2 seconds
+  - every answer has `Cache-Control: no-store`
 - [ ] Commit `feat(api): serve client counts per period`.
 
 ### Task 5: Mockups of the new components
@@ -250,7 +237,7 @@ The tasks below name tests by number. Skip any test the agreed list drops.
   - the Components and Docs page layouts
   - the dashboard at 375px
 - [ ] Show it to the repo owner and adjust it until they approve.
-- [ ] Commit `docs: add the approved mockup of the new components`. Tasks 6–15 follow it.
+- [ ] Commit `docs: add the approved mockup of the new components`. Tasks 6–14 follow it.
 
 ### Task 6: Styles, the app shell and the gallery
 
@@ -262,7 +249,7 @@ The tasks below name tests by number. Skip any test the agreed list drops.
 - `src/app/App.tsx`, `App.module.css`, `TopBar.tsx`, `TopBar.module.css`
 - `src/ui/NavTabs/NavTabs.tsx`, `NavTabs.module.css`, `NavTabs.examples.tsx`; `src/ui/examples.ts`
 - `src/features/gallery/GalleryPage.tsx`, `GalleryPage.module.css`
-- placeholders, filled in later: `src/features/clients/ClientsPage.tsx` (Task 13), `src/features/docs/DocsPage.tsx` (Task 15)
+- placeholders, filled in later: `src/features/clients/ClientsPage.tsx` (Task 13), `src/features/docs/DocsPage.tsx` (Task 14)
 
 **Produces:**
 
@@ -391,9 +378,9 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 ### Task 10: The table's rules
 
-**Delivers:** the pure rules behind the table and the chart (§5.3, §5.4), and test #5.
+**Delivers:** the pure rules behind the table and the chart (§5.3, §5.4).
 
-**Files:** `apps/web/src/features/clients/model/toClientTree.ts`, `openedRows.ts`; test `openedRows.test.ts`.
+**Files:** `apps/web/src/features/clients/model/toClientTree.ts`, `openedRows.ts`.
 
 **Produces:**
 
@@ -409,8 +396,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Steps:**
 
-- [ ] Write test #5 as a table of cases, using §5.3's examples.
-- [ ] Implement until it passes. Break one line, read the failure, restore.
+- [ ] Write them. §5.3's examples get checked in the running page in Task 13.
 - [ ] Commit `feat(clients): add the opened-rows rules`.
 
 ### Task 11: The chart model and formatting
@@ -433,7 +419,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Steps:**
 
-- [ ] Write them. No tests of their own: testing-strategy.md leaves out small formatting helpers and captions, and tests #6 and #8 cover them.
+- [ ] Write them.
 - [ ] Commit `feat(clients): add the chart model and formatting`.
 
 ### Task 12: Loading data and the demo switches
@@ -447,7 +433,7 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Produces:**
 
-- `createQueryClient()`, with `retry: false` and `refetchOnWindowFocus: false` (§5.5). The app and the tests both use it.
+- `createQueryClient()`, with `retry: false` and `refetchOnWindowFocus: false` (§5.5).
 - `fetchClientCounts({ period, demo, signal }: { period: Period; demo: DemoSettings; signal?: AbortSignal }): Promise<ClientCountsResponse>`:
   - adds `X-Demo` only when a switch is on
   - throws `ApiError` (`status`, `code?`) on an answer that isn't 2xx
@@ -466,14 +452,12 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 ### Task 13: The Clients page
 
-**Delivers:** the dashboard itself (§5.5, §5.7), the test setup, and test #6.
+**Delivers:** the dashboard itself (§5.5, §5.7).
 
 **Files:**
 
 - `apps/web/src/features/clients/ClientsPage.tsx` and `.module.css`, `ClientsTable.tsx`, `ClientsChart.tsx`, `ChartLabel.tsx`, `PeriodSelect.tsx`
 - `src/app/App.tsx`: now holds the page state
-- Test setup: `src/test/setup.ts`, `src/test/server.ts`, `src/test/renderApp.tsx`, and `setupFiles` in the web app's Vitest config
-- Test: `src/app/App.test.tsx`
 
 **Produces:**
 
@@ -487,45 +471,21 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 - `ClientsTable`: the columns from §5.7, with `RowName` (the avatar for advisors, then the name).
 - `ChartLabel` for a month: "May 2024", then the subject's total from `totals` (never summed), then each part with its colour square and number (§5.7).
 - `PeriodSelect`: the `PERIODS`, labelled "Last 12 months", "Last 6 months", "Last 3 months" and "Last month".
-- **The test setup:**
-  - `setup.ts`:
-    - the jest-dom matchers (`@testing-library/jest-dom/vitest`)
-    - the `ResizeObserver` stub
-    - the MSW server: `listen({ onUnhandledRequest: 'error' })`, `resetHandlers()` after each test, `close()` at the end
-    - `cleanup()` and `localStorage.clear()` after each test
-  - `server.ts`: the MSW server, forwarding every `/api/` request to `createApp({ demoMode: true })`
-  - `renderApp(path = '/')`: renders `<App/>` with a fresh `createQueryClient()` and wouter's `memoryLocation({ path })`, and returns user-event's `user`
 
 **Steps:**
 
-- [ ] Write test #6 (the first load).
-- [ ] Build the page until it passes. Break one line, read the failure, restore.
+- [ ] Build the page.
+- [ ] Check §5.3's examples in the running page: open Branch 1, then Anna; close Branch 1; reopen it.
 - [ ] Compare the page with Figma's Mockup 2 in a wide window, and run the §10 checklist.
 - [ ] Commit `feat(clients): build the Clients page`.
 
-### Task 14: The dashboard's remaining tests
-
-**Files:** `apps/web/src/app/App.test.tsx`.
-
-- Tests #7–#10:
-  - #7: opening and closing rows moves the chart
-  - #8: the label's numbers, and Escape
-  - #9: changing the period
-  - #10: the error state
-- No real waiting. A test that needs a slow answer holds the request with `server.use(…)` until it releases a promise; a test that needs a failure fails one request with `{ once: true }`.
-
-**Steps:**
-
-- [ ] For each test: write it, see it pass, break one line, read the failure, restore.
-- [ ] Commit `test(web): cover the dashboard's behaviour`.
-
-### Task 15: The Docs tab
+### Task 14: The Docs tab
 
 **Files:** `apps/web/src/features/docs/DocsPage.tsx`, `DocsPage.module.css`; `vite.config.ts` gets an `@docs` alias for the repo-root `docs/` folder.
 
 **Notes:**
 
-- It renders `docs/decisions.md`, imported as text at build time (`@docs/decisions.md?raw`), with `react-markdown` and `remark-gfm`, in the Docs page's own on-demand chunk (D20, D31). Task 17 switches it to the two final files.
+- It renders `docs/decisions.md`, imported as text at build time (`@docs/decisions.md?raw`), with `react-markdown` and `remark-gfm`, in the Docs page's own on-demand chunk (D20, D31). Task 16 switches it to the two final files.
 - Relative links in the Markdown, e.g. to the ADRs, are rewritten to the same file on GitHub. react-markdown's `defaultUrlTransform` runs first, so unsafe links stay out.
 - Prose has a line height of at least 1.5 (D41), and tables scroll sideways inside their own box on narrow screens.
 
@@ -534,25 +494,19 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 - [ ] Build it. Check in the `npm run build` output that the dashboard's files don't include react-markdown.
 - [ ] Commit `feat(docs): render the decisions in the Docs tab`.
 
-### Task 16: The real-browser test
+### Task 15: Tests
 
-**Files:** `apps/web/playwright.config.ts`, `apps/web/e2e/layout.spec.ts`; `apps/api/package.json` gets a `start` script (the API without watching); the web app gets the `test:e2e` script and the root script calls it; CI.
-
-**Notes:**
-
-- Playwright runs Chromium against the built app. Its `webServer` starts the API and `vite preview`, which proxies `/api`.
-- Test #11:
-  - at 320px and 375px, `/`, `/components` and `/docs` never scroll sideways: the page's `scrollWidth` is at most its `clientWidth`
-  - Docs shows its first heading
-  - an axe scan of each tab, if Task 0 agreed to it
-- CI adds `npx playwright install --with-deps chromium`, then `npm run test:e2e`.
+**Delivers:** the agreed tests, the tools to run them, and both in CI (D36, [testing-strategy.md](testing-strategy.md)).
 
 **Steps:**
 
-- [ ] Write it. Break one line, e.g. remove the table's own sideways scrolling, see the test fail, restore.
-- [ ] Commit `test(web): check narrow layouts in a real browser`.
+- [ ] Agree the test list with the repo owner, one question at a time, starting from testing-strategy.md's draft.
+- [ ] Plan the work in detail once the list is agreed; it may split into a few tasks. What's already verified for the setup is listed under "Verified before planning".
+- [ ] Write the tests. Each one is seen failing once: break the line that prevents the bug it catches, read the failure, restore the line.
+- [ ] Add `test` (and `test:e2e`, if there are real-browser tests) to the root scripts and to CI.
+- [ ] Update testing-strategy.md and D36 with the final list.
 
-### Task 17: The final docs and README
+### Task 16: The final docs and README
 
 The last stage from §10:
 
@@ -567,7 +521,7 @@ The last stage from §10:
   - the photo's source (D16)
 - [ ] Commit `docs: final decisions and README`.
 
-### Task 18: The production check and going public
+### Task 17: The production check and going public
 
 - [ ] Once the release pull request is merged, run the §10 checklist on the production site, including on a phone.
 - [ ] Ask the repo owner to confirm, then make the repository public with `gh repo edit --visibility public --accept-visibility-change-consequences`. Check the README's links afterwards.
@@ -578,7 +532,7 @@ The last stage from §10:
 
 | Design | Tasks |
 |---|---|
-| §2 Architecture, §9 Tools and CI | 1 |
+| §2 Architecture, §9 Tools and CI | 1 (tests' tools: 15) |
 | §2.3 Hosting | 2 |
 | §3 Contract | 3 |
 | §4 API | 4 |
@@ -587,9 +541,9 @@ The last stage from §10:
 | §5.6 Our components | 6 (NavTabs), 7, 8, 9 |
 | §5.3 Page state, §5.4 From answer to screen | 10, 11, 13 |
 | §5.5 Loading data | 12, 13 |
-| §5.7 Feature components | 6 (Gallery), 12 (DemoSwitches), 13, 15 (Docs) |
-| §6 Accessibility | 6–9, 13, 16 |
-| §7 Page weight | 15 (build check), 17 (README) |
-| §8 Testing | 0, 4, 10, 13, 14, 16 |
-| §10 Delivery | every task; the last stage is 17–18 |
-| §12 Follow-ups | 17 (README) |
+| §5.7 Feature components | 6 (Gallery), 12 (DemoSwitches), 13, 14 (Docs) |
+| §6 Accessibility | 6–9, 13, 15 |
+| §7 Page weight | 14 (build check), 16 (README) |
+| §8 Testing | 15 |
+| §10 Delivery | every task; the last stage is 16–17 |
+| §12 Follow-ups | 16 (README) |
