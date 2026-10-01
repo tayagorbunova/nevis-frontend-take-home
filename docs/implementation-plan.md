@@ -31,6 +31,7 @@ Every task follows these, on top of its own requirements.
   - Only `src/ui/` imports `react-aria-components`, `react-aria` and `recharts`.
   - `src/ui/` never imports from `src/features/` or `src/app/`.
   - Only data-loading code (`features/*/api/`) calls `fetch`.
+- **Imports:** server-side code (`apps/api`, `api/`, `packages/contract`) names the real file in relative imports (`./app.ts`), because Vercel compiles those files one by one (D12). The web app's imports have no file endings.
 - **The UI only presents (Principles, D4, D7):** a total shown anywhere is a row's own number from the server, and months come from the server's answer. Nothing is summed, fixed or assumed.
 - **Words (D6):** our code says "advisor" and "channel". Only the contract and `toClientTree` mention `employees` and `channels`.
 - **Styles (§5.8, D41):**
@@ -144,24 +145,28 @@ Every task follows these, on top of its own requirements.
 
 **Files:**
 
-- `api/client-counts.ts`: `export const GET = handle(createApp())`, with `handle` from `hono/vercel`
+- `api/client-counts.ts`: imports `createApp` from `../apps/api/src/app.ts` and default-exports `createApp()`. No adapter: Hono's Vercel adapter is deprecated.
 - `vercel.json`:
+  - `framework: null`, so the preset chosen in Vercel's dashboard doesn't matter
   - `buildCommand: "npm run build"`
   - `outputDirectory: "apps/web/dist"`
   - one rewrite sending everything except `/api/…` to `/index.html`, because the app handles `/components` and `/docs` itself
-- a root `tsconfig.json`, for the TypeScript files in `api/`
+- a root `tsconfig.json`, for the TypeScript files in `api/`; the root `typecheck` script checks it too
+- `tsconfig.base.json`: `rewriteRelativeImportExtensions`, and server-side relative imports name the real `.ts` file
 - Node 24 comes from `engines` in the root `package.json`
 
 **Steps:**
 
 - [ ] Push the branch, open the pull request and wait for the preview.
 - [ ] Check on the preview: `/` and a direct visit to `/docs` show the page, and `/api/client-counts` answers `{"ok":true}`.
-- [ ] **If the function fails to start:** Vercel compiles a function's TypeScript files one by one, so imports without file extensions, or a workspace package whose entry is a `.ts` file, can fail at runtime. Try in this order:
-  1. explicit `.js` extensions on the relative imports in `apps/api` (and later in `packages/contract`)
-  2. bundling the function during the build and publishing it through Vercel's Build Output API
-
-  Record what worked as a short update under D12.
+- [ ] Record what worked as a short update under D12.
 - [ ] Commit `chore: deploy to Vercel`.
+
+**What we learned** (from Vercel's build code and the preview):
+
+- Vercel compiles a function's TypeScript files one by one and ships only the JavaScript. With TypeScript 6 it doesn't rename `.ts` imports by itself, which is why `rewriteRelativeImportExtensions` is set.
+- **For Task 3:** a workspace package whose entry is a `.ts` file will probably fail at runtime on Vercel, because the package still points at the `.ts` file after it has been compiled to `.js`. If the preview shows that, bundle the function into one file during the build.
+- **For Task 4:** in server-side code, the JSON data import needs `with { type: "json" }`.
 
 ### Task 3: The contract
 
@@ -189,6 +194,7 @@ Every task follows these, on top of its own requirements.
 
 - [ ] Write the schemas; the types come from `z.infer`.
 - [ ] Commit `feat(contract): add the API contract`.
+- [ ] Once the API imports the contract (Task 4), check on the pull request's preview that `/api/client-counts` still answers (see Task 2's "What we learned").
 
 ### Task 4: The API
 

@@ -57,11 +57,12 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 | **Locally** (`npm run dev`) | Vite dev server on port 5173, which forwards `/api/*` to the API | Hono on Node.js, port 3001 |
 | **Vercel** (D12) | Static files built from `apps/web` | The same Hono app as a Vercel function |
 
-**Verified first:** exactly how Vercel serves the Hono app next to the static page inside our monorepo. The first implementation task is a minimal deploy that proves `/`, `/docs` and `/api/client-counts` all work, before any features are built. Known ingredients:
+**Verified first:** how Vercel serves the Hono app next to the static page inside our monorepo. A minimal deploy proved that `/`, `/docs` and `/api/client-counts` all work, before any features were built (D12):
 
-- Hono's zero-config Vercel support, or a function entry that exports the app
-- the web app's build output as the static site
-- a rewrite so that `/components` and `/docs` serve the page (the app handles those addresses itself)
+- **The function:** `api/client-counts.ts` at the repo root imports the Hono app from `apps/api` and exports it. Vercel only looks for functions in a top-level `api/` folder.
+- **The page:** the web app's build output (`apps/web/dist`), served as static files.
+- **One rewrite** in `vercel.json` sends every address outside `/api/` to the page, because the app handles `/components` and `/docs` itself.
+- **Imports in server-side code name the real file** (`./app.ts`), and a TypeScript setting renames them to `.js` when Vercel compiles the function. The page's imports have no endings.
 
 ## 3. The contract (`packages/contract`)
 
@@ -97,7 +98,7 @@ The rules the schemas enforce:
 
 - `src/app.ts`: the Hono app (routes and error handling)
 - `src/server.ts`: the local Node.js entry
-- the Vercel entry (see §2.3)
+- the Vercel entry: `api/client-counts.ts` at the repo root, which imports the app and exports it (§2.3, D12)
 - `src/data/client-counts.json`: the brief's payload, copied exactly, plus `"avatarUrl": "/avatars/anna-blackwood.jpg"` on Anna Blackwood (D16)
 - `src/data/firstMonth.ts`: `FIRST_MONTH = '2024-02'`. The payload has no dates, so the server owns this (D7).
 - `src/selectPeriod.ts`: the pure month-picking function
