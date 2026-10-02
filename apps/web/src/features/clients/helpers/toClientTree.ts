@@ -1,17 +1,35 @@
 import type { ApiBranch, ApiChannel, ApiCompany, ApiEmployee } from "@nevis/contract";
 
-export type RowLevel = "company" | "branch" | "advisor" | "channel";
-
-export type ClientRow = {
+type RowBase = {
   id: string;
   name: string;
-  level: RowLevel;
   values: number[];
-  avatarUrl?: string;
-  children: ClientRow[];
 };
 
-export function toClientTree(company: ApiCompany): ClientRow {
+type CompanyRow = RowBase & {
+  level: "company";
+  children: BranchRow[];
+};
+
+type BranchRow = RowBase & {
+  level: "branch";
+  children: AdvisorRow[];
+};
+
+type AdvisorRow = RowBase & {
+  level: "advisor";
+  avatarUrl?: string;
+  children: ChannelRow[];
+};
+
+type ChannelRow = RowBase & {
+  level: "channel";
+  children: never[];
+};
+
+export type ClientRow = CompanyRow | BranchRow | AdvisorRow | ChannelRow;
+
+export function toClientTree(company: ApiCompany): CompanyRow {
   return {
     id: company.id,
     name: company.name,
@@ -21,7 +39,7 @@ export function toClientTree(company: ApiCompany): ClientRow {
   };
 }
 
-function toBranchRow(branch: ApiBranch): ClientRow {
+function toBranchRow(branch: ApiBranch): BranchRow {
   return {
     id: branch.id,
     name: branch.name,
@@ -31,7 +49,7 @@ function toBranchRow(branch: ApiBranch): ClientRow {
   };
 }
 
-function toAdvisorRow(employee: ApiEmployee): ClientRow {
+function toAdvisorRow(employee: ApiEmployee): AdvisorRow {
   return {
     id: employee.id,
     name: employee.name,
@@ -42,7 +60,7 @@ function toAdvisorRow(employee: ApiEmployee): ClientRow {
   };
 }
 
-function toChannelRow(channel: ApiChannel): ClientRow {
+function toChannelRow(channel: ApiChannel): ChannelRow {
   return {
     id: channel.id,
     name: channel.name,

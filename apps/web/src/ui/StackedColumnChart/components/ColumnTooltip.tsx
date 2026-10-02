@@ -2,10 +2,10 @@ import { createPortal } from "react-dom";
 
 import type { ChartSeries, ChartTotal } from "../chartTypes";
 
-import styles from "./ColumnLabel.module.css";
+import styles from "./ColumnTooltip.module.css";
 import { Swatch } from "./Swatch";
 
-type ColumnLabelProps = {
+type ColumnTooltipProps = {
   active?: boolean;
   activeIndex?: string | null;
   statusRegion: HTMLElement | null;
@@ -15,7 +15,7 @@ type ColumnLabelProps = {
   formatValue: (value: number | undefined) => string;
 };
 
-export function ColumnLabel({
+export function ColumnTooltip({
   active,
   activeIndex,
   statusRegion,
@@ -23,7 +23,7 @@ export function ColumnLabel({
   series,
   total,
   formatValue,
-}: ColumnLabelProps) {
+}: ColumnTooltipProps) {
   if (!active) return null;
 
   const columnIndex = Number(activeIndex);
@@ -51,7 +51,7 @@ export function ColumnLabel({
 
   return (
     <>
-      <div className={styles.label} aria-hidden="true">
+      <div className={styles.tooltip} aria-hidden="true">
         {rows}
       </div>
 

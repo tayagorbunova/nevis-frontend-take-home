@@ -12,8 +12,8 @@ import { ClientsPlaceholder } from "./components/ClientsPlaceholder";
 import { ClientsTable } from "./components/ClientsTable";
 import { ErrorCard } from "./components/ErrorCard";
 import { PeriodSelect } from "./components/PeriodSelect";
-import { chartSubject, closeRow, openRow } from "./model/openedRows";
-import { toClientTree } from "./model/toClientTree";
+import { closeRow, openRow, pickRowForChart } from "./helpers/openedRows";
+import { toClientTree } from "./helpers/toClientTree";
 
 type ClientsPageProps = {
   period: Period;
@@ -30,18 +30,21 @@ export function ClientsPage({
   onOpenedRowIdsChange,
   demoSettings,
 }: ClientsPageProps) {
-  const { data, isFetching, hasLastRequestFailed, refetch } = useClientCounts(period, demoSettings);
+  const { clientCounts, isFetching, hasLastRequestFailed, refetch } = useClientCounts(
+    period,
+    demoSettings,
+  );
 
-  const isRefreshing = !hasLastRequestFailed && data !== undefined && isFetching;
+  const isRefreshing = !hasLastRequestFailed && clientCounts !== undefined && isFetching;
 
   function renderContent() {
     if (hasLastRequestFailed) {
-      return <ErrorCard isBusy={isFetching} onRetry={() => void refetch()} />;
+      return <ErrorCard isRetrying={isFetching} onRetry={() => void refetch()} />;
     }
 
-    if (data === undefined) return <ClientsPlaceholder />;
+    if (clientCounts === undefined) return <ClientsPlaceholder />;
 
-    const tree = toClientTree(data.company);
+    const tree = toClientTree(clientCounts.company);
     const openedIds = openedRowIds ?? [tree.id];
 
     function handleRowOpenChange(id: string, isOpen: boolean) {
@@ -54,11 +57,11 @@ export function ClientsPage({
 
     return (
       <div className={isRefreshing ? styles.refreshingCards : styles.cards}>
-        <ClientsChart subject={chartSubject(tree, openedIds)} months={data.months} />
+        <ClientsChart rowForChart={pickRowForChart(tree, openedIds)} months={clientCounts.months} />
 
         <ClientsTable
           tree={tree}
-          months={data.months}
+          months={clientCounts.months}
           openedRowIds={openedIds}
           onRowOpenChange={handleRowOpenChange}
         />

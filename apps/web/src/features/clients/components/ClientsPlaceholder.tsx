@@ -2,12 +2,12 @@ import { Card, Skeleton } from "@ui";
 
 import styles from "./ClientsPlaceholder.module.css";
 
-const PLACEHOLDER_MONTHS = Array.from({ length: 12 }, (_, index) => index);
-const PLACEHOLDER_BRANCHES = Array.from({ length: 3 }, (_, index) => index);
+const MONTH_COUNT = 12;
+const BRANCH_COUNT = 3;
 
 function CountPlaceholders() {
-  return PLACEHOLDER_MONTHS.map((month) => (
-    <Skeleton key={month} width="1.75rem" height="0.875rem" />
+  return Array.from({ length: MONTH_COUNT }, (_, index) => (
+    <Skeleton key={index} width="1.75rem" height="0.875rem" />
   ));
 }
 
@@ -32,8 +32,8 @@ export function ClientsPlaceholder() {
         <div className={styles.headerPlaceholder}>
           <span />
 
-          {PLACEHOLDER_MONTHS.map((month) => (
-            <div key={month} className={styles.monthPlaceholder}>
+          {Array.from({ length: MONTH_COUNT }, (_, index) => (
+            <div key={index} className={styles.monthPlaceholder}>
               <div className={styles.monthNamePlaceholder}>
                 <Skeleton width="min(3.5rem, 100%)" height="0.875rem" />
               </div>
@@ -49,8 +49,8 @@ export function ClientsPlaceholder() {
           <CountPlaceholders />
         </div>
 
-        {PLACEHOLDER_BRANCHES.map((branch) => (
-          <div key={branch} className={styles.rowPlaceholder}>
+        {Array.from({ length: BRANCH_COUNT }, (_, index) => (
+          <div key={index} className={styles.rowPlaceholder}>
             <div className={styles.branchNamePlaceholder}>
               <Skeleton width="4.5rem" height="0.875rem" />
             </div>

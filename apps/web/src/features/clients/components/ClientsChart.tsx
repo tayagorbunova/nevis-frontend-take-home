@@ -1,16 +1,16 @@
 import { Card, StackedColumnChart } from "@ui";
 
-import { chartModel } from "../model/chartModel";
-import { formatCount, formatMonth } from "../model/format";
-import type { ChartSubject } from "../model/openedRows";
+import { toChartContent } from "../helpers/chartContent";
+import { formatCount, formatMonth } from "../helpers/format";
+import type { RowForChart } from "../helpers/openedRows";
 
 type ClientsChartProps = {
-  subject: ChartSubject;
+  rowForChart: RowForChart;
   months: readonly string[];
 };
 
-export function ClientsChart({ subject, months }: ClientsChartProps) {
-  const { caption, description, series, total } = chartModel(subject, months);
+export function ClientsChart({ rowForChart, months }: ClientsChartProps) {
+  const { caption, description, series, total } = toChartContent(rowForChart, months);
 
   return (
     <Card>

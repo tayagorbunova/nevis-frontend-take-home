@@ -20,5 +20,5 @@ export function useClientCounts(period: Period, demoSettings: DemoSettings) {
     setHasLastRequestFailed(hasFailed);
   }
 
-  return { data, isFetching, hasLastRequestFailed, refetch };
+  return { clientCounts: data, isFetching, hasLastRequestFailed, refetch };
 }

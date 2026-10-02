@@ -13,6 +13,12 @@ npm run dev
 
 Then open http://localhost:5173. The command starts both the page and the API (on port 3001).
 
+## Run the tests
+
+```bash
+npm test
+```
+
 ## Docs
 
 - [Product decisions](docs/product-decisions.md): what the brief and the design left open, what I decided, and what I'd explore next.

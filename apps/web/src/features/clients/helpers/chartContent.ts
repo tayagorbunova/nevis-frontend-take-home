@@ -1,18 +1,18 @@
 import { CHART_PALETTE, type ChartSeries, type ChartTotal } from "@ui";
 
 import { formatMonth } from "./format";
-import type { ChartSubject } from "./openedRows";
+import type { RowForChart } from "./openedRows";
 import type { ClientRow } from "./toClientTree";
 
-export type ChartModel = {
+export type ChartContent = {
   caption: string;
   description: string;
   series: ChartSeries[];
   total?: ChartTotal;
 };
 
-export function chartModel(subject: ChartSubject, months: readonly string[]): ChartModel {
-  const { row, isSplit } = subject;
+export function toChartContent(rowForChart: RowForChart, months: readonly string[]): ChartContent {
+  const { row, isSplit } = rowForChart;
 
   const [firstChild] = row.children;
   const caption = isSplit && firstChild ? `${row.name} by ${firstChild.level}` : row.name;
