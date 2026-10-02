@@ -1,4 +1,5 @@
 import { DEFAULT_PERIOD } from "@nevis/contract";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense, useState } from "react";
 import { Redirect, Route, Switch } from "wouter";
 
@@ -6,7 +7,8 @@ import { ClientsPage } from "../features/clients/ClientsPage";
 import { DEMO_SETTINGS_OFF } from "../features/demo/demoSettings";
 
 import styles from "./App.module.css";
-import { TopBar } from "./TopBar";
+import { TopBar } from "./components/TopBar";
+import { createQueryClient } from "./queryClient";
 
 const GalleryPage = lazy(() =>
   import("../features/gallery/GalleryPage").then((module) => ({ default: module.GalleryPage })),
@@ -17,12 +19,14 @@ const DocsPage = lazy(() =>
 );
 
 export function App() {
+  const [queryClient] = useState(createQueryClient);
+
   const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [openedRowIds, setOpenedRowIds] = useState<string[] | null>(null);
   const [demoSettings, setDemoSettings] = useState(DEMO_SETTINGS_OFF);
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <TopBar demoSettings={demoSettings} onDemoSettingsChange={setDemoSettings} />
 
       <main className={styles.page}>
@@ -60,6 +64,6 @@ export function App() {
           </Switch>
         </Suspense>
       </main>
-    </>
+    </QueryClientProvider>
   );
 }

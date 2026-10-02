@@ -2,8 +2,8 @@ import { useRoute } from "wouter";
 
 import { NavTabs } from "@ui";
 
-import { DemoControls } from "../features/demo/DemoControls";
-import type { DemoSettings } from "../features/demo/demoSettings";
+import { DemoControls } from "../../features/demo/DemoControls";
+import type { DemoSettings } from "../../features/demo/demoSettings";
 
 import styles from "./TopBar.module.css";
 
