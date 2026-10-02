@@ -1,4 +1,4 @@
-import type { ApiCompany, ClientCountsResponse, Period } from "@nevis/contract";
+import { listRows, type ApiCompany, type ClientCountsResponse, type Period } from "@nevis/contract";
 
 const MONTHS_IN_PERIOD: Record<Period, number> = {
   "last-12-months": 12,
@@ -28,11 +28,4 @@ function addMonths(month: string, count: number) {
   const date = new Date(month);
   date.setUTCMonth(date.getUTCMonth() + count);
   return date.toISOString().slice(0, 7);
-}
-
-function listRows(company: ApiCompany) {
-  const branches = company.branches ?? [];
-  const employees = branches.flatMap((branch) => branch.employees ?? []);
-  const channels = employees.flatMap((employee) => employee.channels ?? []);
-  return [company, ...branches, ...employees, ...channels];
 }
