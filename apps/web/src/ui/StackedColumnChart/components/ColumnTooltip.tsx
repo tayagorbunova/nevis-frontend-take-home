@@ -28,19 +28,19 @@ export function ColumnTooltip({
 
   const columnIndex = Number(activeIndex);
 
-  const rows = (
+  const lines = (
     <>
       <div className={styles.columnName}>{columnNames[columnIndex]}</div>
 
       {total && (
-        <div className={styles.row}>
+        <div className={styles.line}>
           {total.name}
           <span className={styles.value}>{formatValue(total.values[columnIndex])}</span>
         </div>
       )}
 
       {series.map(({ id, name, color, values }) => (
-        <div key={id} className={styles.row}>
+        <div key={id} className={styles.line}>
           <Swatch color={color} />
           <span className={styles.seriesName}>{name}</span>
           <span className={styles.value}>{formatValue(values[columnIndex])}</span>
@@ -52,10 +52,10 @@ export function ColumnTooltip({
   return (
     <>
       <div className={styles.tooltip} aria-hidden="true">
-        {rows}
+        {lines}
       </div>
 
-      {statusRegion && createPortal(rows, statusRegion)}
+      {statusRegion && createPortal(lines, statusRegion)}
     </>
   );
 }

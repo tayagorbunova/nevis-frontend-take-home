@@ -18,7 +18,7 @@
   line-height: var(--line-height-footnote);
 }
 
-.row {
+.line {
   display: flex;
   align-items: center;
   gap: var(--space-8);
