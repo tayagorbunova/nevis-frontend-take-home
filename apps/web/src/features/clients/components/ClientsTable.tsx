@@ -29,7 +29,6 @@ export function ClientsTable({ tree, months, openedRowIds, onRowOpenChange }: Cl
       id: "name",
       header: "Name",
       hideHeader: true,
-      isRowHeader: true,
       cell: (row) => <RowName row={row} />,
     },
     ...months.map((month, index): TreeTableColumn<ClientRow> => ({
