@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-import type { Examples, ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../exampleTypes";
 
 import { Card } from "./Card";
 

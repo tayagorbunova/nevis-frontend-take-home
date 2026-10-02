@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { Examples, ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../exampleTypes";
 
 import { TreeTable, type TreeTableColumn } from "./TreeTable";
 

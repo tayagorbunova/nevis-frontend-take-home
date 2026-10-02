@@ -1,4 +1,4 @@
-import type { Examples, ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../exampleTypes";
 
 import { Button } from "./Button";
 

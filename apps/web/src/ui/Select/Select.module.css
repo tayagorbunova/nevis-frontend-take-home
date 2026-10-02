@@ -44,13 +44,6 @@
   cursor: default;
 }
 
-.icon {
-  display: block;
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-}
-
 .popover {
   min-width: var(--trigger-width);
   padding: var(--space-4);

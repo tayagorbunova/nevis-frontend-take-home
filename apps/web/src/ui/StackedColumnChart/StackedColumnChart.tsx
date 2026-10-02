@@ -1,5 +1,4 @@
 import { useId, useLayoutEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { VisuallyHidden } from "react-aria-components";
 import {
   Bar,
@@ -12,20 +11,11 @@ import {
   YAxis,
 } from "recharts";
 
-import type { ChartColor } from "./palette";
+import type { ChartSeries, ChartTotal } from "./chartTypes";
+import { ColumnLabel } from "./components/ColumnLabel";
+import { Swatch } from "./components/Swatch";
+import { toCssColor } from "./palette";
 import styles from "./StackedColumnChart.module.css";
-
-export type ChartSeries = {
-  id: string;
-  name: string;
-  color: ChartColor;
-  values: readonly number[];
-};
-
-export type ChartTotal = {
-  name: string;
-  values: readonly number[];
-};
 
 type StackedColumnChartProps = {
   title: string;
@@ -53,16 +43,6 @@ const TILTED_COLUMN_NAMES = {
   interval: 0,
 } as const;
 
-function toCssColor(color: ChartColor) {
-  return `var(--color-chart-${color})`;
-}
-
-type SwatchProps = { color: ChartColor };
-
-function Swatch({ color }: SwatchProps) {
-  return <span className={styles.swatch} style={{ background: toCssColor(color) }} />;
-}
-
 type PlotWidthReporterProps = { onChange: (width: number) => void };
 
 function PlotWidthReporter({ onChange }: PlotWidthReporterProps) {
@@ -73,61 +53,6 @@ function PlotWidthReporter({ onChange }: PlotWidthReporterProps) {
   }, [width, onChange]);
 
   return null;
-}
-
-type ColumnLabelProps = {
-  active?: boolean;
-  activeIndex?: string | null;
-  statusRegion: HTMLElement | null;
-  columnNames: readonly string[];
-  series: readonly ChartSeries[];
-  total?: ChartTotal;
-  formatValue: (value: number | undefined) => string;
-};
-
-function ColumnLabel({
-  active,
-  activeIndex,
-  statusRegion,
-  columnNames,
-  series,
-  total,
-  formatValue,
-}: ColumnLabelProps) {
-  if (!active) return null;
-
-  const columnIndex = Number(activeIndex);
-
-  const rows = (
-    <>
-      <div className={styles.labelColumnName}>{columnNames[columnIndex]}</div>
-
-      {total && (
-        <div className={styles.labelRow}>
-          {total.name}
-          <span className={styles.labelValue}>{formatValue(total.values[columnIndex])}</span>
-        </div>
-      )}
-
-      {series.map(({ id, name, color, values }) => (
-        <div key={id} className={styles.labelRow}>
-          <Swatch color={color} />
-          <span className={styles.labelSeriesName}>{name}</span>
-          <span className={styles.labelValue}>{formatValue(values[columnIndex])}</span>
-        </div>
-      ))}
-    </>
-  );
-
-  return (
-    <>
-      <div className={styles.label} aria-hidden="true">
-        {rows}
-      </div>
-
-      {statusRegion && createPortal(rows, statusRegion)}
-    </>
-  );
 }
 
 export function StackedColumnChart({

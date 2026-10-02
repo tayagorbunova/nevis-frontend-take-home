@@ -2,7 +2,7 @@ import { useState, type PropsWithChildren } from "react";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
-import type { Examples, ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../exampleTypes";
 
 import { NavTabs } from "./NavTabs";
 

@@ -37,41 +37,6 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.label {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 10.5rem;
-  padding: var(--space-12);
-  background: var(--color-card);
-  border: var(--border-width) solid var(--color-control-border);
-  border-radius: var(--radius-large);
-  box-shadow: var(--shadow-floating);
-  color: var(--color-text);
-  font-size: var(--font-size-body);
-}
-
-.labelColumnName {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-footnote);
-  line-height: var(--line-height-footnote);
-}
-
-.labelRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-}
-
-.labelSeriesName {
-  color: var(--color-text-muted);
-}
-
-.labelValue {
-  margin-inline-start: auto;
-  padding-inline-start: var(--space-16);
-}
-
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -91,19 +56,8 @@
   gap: var(--space-4);
 }
 
-.swatch {
-  flex: none;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: var(--radius-small);
-}
-
 @media (forced-colors: active) {
   .chart {
     --color-gridline: CanvasText;
-  }
-
-  .swatch {
-    forced-color-adjust: none;
   }
 }

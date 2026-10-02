@@ -1,7 +1,7 @@
 import Markdown from "react-markdown";
 
-import productMarkdown from "@docs/product-final.md?raw";
-import technicalMarkdown from "@docs/technical-final.md?raw";
+import productMarkdown from "@docs/product-decisions.md?raw";
+import technicalMarkdown from "@docs/technical-decisions.md?raw";
 import { NavTabs } from "@ui";
 
 import styles from "./DocsPage.module.css";
