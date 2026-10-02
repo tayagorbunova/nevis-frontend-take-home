@@ -30,7 +30,10 @@
   --border: var(--border-width) solid var(--color-border);
   --focus-ring: 2px solid var(--color-text);
   --focus-ring-offset: 2px;
+  --shadow-floating: 0 0.25rem 1rem rgb(20 20 19 / 10%);
 
   --control-height: 2.25rem;
   --opacity-disabled: 0.5;
+
+  --duration-fast: 150ms;
 }

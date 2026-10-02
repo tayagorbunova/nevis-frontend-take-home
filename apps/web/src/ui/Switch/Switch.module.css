@@ -1,6 +1,5 @@
 .switch {
   --color-switch-off: rgb(20 20 19 / 60%);
-  --duration-fast: 150ms;
 
   display: flex;
   align-items: center;

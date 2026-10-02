@@ -264,6 +264,21 @@ Is 84 KB a lot? Not for this product. React itself is 67 KB, many websites load 
 
 Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 
+**Update (2026-10-01, other headless libraries weighed):** asked once the build passed 500 kB before compression. Compressed sizes from Bundlephobia, each component measured on its own, React not counted:
+
+| Library | Dropdown | Switch | Accessible table with rows that open |
+|---|---|---|---|
+| React Aria Components 1.21 | 30 kB | 13 kB | 46 kB |
+| Radix UI | 29 kB | 5 kB | none |
+| Headless UI 2.2 | 32 kB | 9 kB | none |
+| Ark UI 5.39 | 32 kB | not measured | none (it has a tree, not a table) |
+| Ariakit 0.4 | about 30 kB | 9 kB (as a checkbox) | none |
+
+- **The dropdown costs about 30 kB in every library,** because each one carries the same things: positioning the floating list, keyboard handling and focus management.
+- **Only React Aria has the table.** With any of the others we would write the treegrid's keyboard and screen-reader behaviour ourselves, which is the work decision 13 set out to avoid. TanStack Table (32 kB) handles a table's data and open rows, but not its keyboard or screen-reader side.
+- **Components of one library share code,** so together they cost less than the sum: everything we use from React Aria is about 84 kB.
+- So another library would save little on the dropdown and the switch, and hand-writing the table would save roughly 40 kB at most. We keep React Aria.
+
 **Update (2026-10-01, the simple components as built):** details whose reasons aren't visible in the code:
 
 - **The switch is built from React Aria's `SwitchField` and `SwitchButton`,** the pair its documentation shows. The library still exports an older single component named `Switch`, marked as deprecated in 1.21, and our lint rejects deprecated APIs. Our own component is still called `Switch`.
@@ -282,6 +297,24 @@ Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 - **Also considered:** `#ui`, through Node's own `imports` field in `package.json`. It needs one line and no bundler setting, and both ways were tried and work. `@ui` was chosen because it's the look most React projects use.
 - **The cost:** each new component adds a line to `index.ts`. And because one file now leads to every component, a page that needs one of them loads them all. That costs nothing here: the dashboard is the first page and uses all of them, which the design's page-weight table already assumes (§7).
 - **Inside `ui/`,** files import each other by relative path, never through `@ui`, so the list doesn't import itself in a circle.
+
+**Update (2026-10-01, the tree table as built):** choices whose reasons aren't visible in the code:
+
+- **The arrow is a plain icon, not a button.** React Aria's documented way puts an "Expand" / "Collapse" button on the arrow. It names each row after its name cell, and the button sits in that cell, so Chrome reported rows as "Expand Branch 1" (collapsed) and "Collapse Company" (expanded): the state said twice, once of them backwards. With a decorative icon the row is "Branch 1, level 2, collapsed". Nothing is lost for mouse or keyboard: the row itself opens and closes with →, ←, Enter and a click anywhere on it. Screen-reader users lose the separate button and use the row.
+- **The hidden "Name" header is real text, hidden with React Aria's `VisuallyHidden`.** An `aria-label` would be simpler (the dropdown does that), but React Aria's column drops the attribute, and the header cell then has no name.
+- **The gap between columns is 8px on each side of every cell,** not 16px on one side. With the gap on one side, each number ended at its cell's edge, and the outline of a focused cell ran through the last digit. On a wide screen nothing moves compared with Figma. Below 40rem the numbers sit 8px closer to the name column than in the mockup.
+- **Focused cells stay visible through a scroll margin on the cells,** not scroll padding on the scrolling box. With scroll padding, clicking a pinned name in a table scrolled sideways made it jump back (from 300px to 132px at 375px), because the browser tried to scroll the pinned cell "into view".
+- **A focused row's outline is drawn from its pinned name cell,** as wide as the scrolling box. An outline on the row itself is hidden under that cell.
+- **The table's focus outlines have the card's corner radius.** A square outline on the last row, or on a cell in a corner, was cut off by the card's rounded corner.
+- **All month headers break into two lines together,** once a column has less than 4.25rem for its text. Left alone they wrapped one by one in windows around 1280px wide, because "Jul 2024" is narrower than "May 2024".
+- **The space after the last column is an empty cell drawn by CSS** at the end of every row. Padding on the last cell instead would put the last number closer to its neighbour than the others are.
+- **Numbers use tabular figures; names don't.** In Inter, tabular figures also widen the hyphen and the digit 1, so a name like "North-Western" would read "North - Western".
+- **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, and an automated accessibility scan with no findings.
+- **Not checked:** a real screen reader by ear (the names above are what the browser hands to one, not what was heard; decision 14 says why), Safari, and a real phone.
+- **Known limits, accepted:**
+  - With browser text at 200% in a 375px window, the pinned name column is wider than the card, so the numbers can't be seen. At that text size the page needs a wider window.
+  - The table takes its width from its parent, so it must sit in something that has a width, such as a card in the page's column.
+  - After a mouse click, keyboard focus is on the clicked cell, not the row (React Aria's behaviour). The arrow keys then move between cells; Enter still opens and closes the row.
 
 ## 14. Keyboard and screen readers: the treegrid pattern
 
@@ -306,7 +339,11 @@ Screen readers hear each row's name, level, position and open/closed state, e.g.
 - A clear outline on the row or cell that has keyboard focus.
 - A label for the first column, such as "Name", visually hidden because its header is blank in the design. Screen readers need it.
 
-**How we check it:** automated tests for the keyboard behaviour and the attributes above, plus a manual check with VoiceOver on macOS. Screen-reader caveats go in the README.
+**Update (2026-10-01, as built):** the arrow is a decorative icon, not a button, so a row is announced by its name alone, as in the example above. Decision 13's update has the details.
+
+**How we check it:** the keyboard behaviour in a real browser, and what the page hands to a screen reader for every row (its name, level, position and open state), read from the browser's accessibility tree, plus an automated accessibility scan. Automated tests for these come with the testing step.
+
+**Not verified by ear (2026-10-01):** the plan was a manual check with VoiceOver on macOS as well. It was dropped: judging a screen reader's speech needs practice with the tool that we don't have. So the exact wording VoiceOver uses is unverified, and the README says so. What a screen reader speaks from is verified, and the behaviour underneath is React Aria's, which Adobe tests with real screen readers.
 
 **Options considered:**
 
@@ -324,11 +361,11 @@ Screen readers hear each row's name, level, position and open/closed state, e.g.
 **Decision:**
 
 - The table scrolls sideways inside its card, with the name column pinned on the left, so you always know whose numbers you're reading. A month column visibly cut off at the card's edge shows there's more to scroll to.
-- The chart keeps all its bars but makes them thinner, and month labels get shorter ("Feb" rather than "Feb 2024", with the year shown once).
+- The chart keeps all its bars but makes them thinner, and its month labels are tilted and a little smaller, so every month keeps its full label ("Feb 2024"). The first plan was shorter labels ("Feb", with the year shown once); seen on a phone, the repo owner preferred the full labels, tilted (2026-10-02).
 - The period dropdown moves under the title, and the demo strip wraps onto more lines if needed.
 - The page itself never scrolls sideways.
 
-A side effect of the period filter: "Last 3 months" fits on a phone without any scrolling.
+A side effect of the period filter: "Last month" fits on a phone without any scrolling, and "Last 3 months" needs only a short one (25px at 375px, measured once the table was built).
 
 **Options considered:**
 
@@ -400,6 +437,12 @@ The labels follow WCAG's rules for content that appears on hover or focus: Escap
 
 **Updated by decision 29 (Recharts):** Home / End are dropped, because with at most 12 months ← / → is enough. Escape is added by our own code. Screen readers hear each month's label read aloud as focus moves, instead of every bar carrying its own label.
 
+**Update (2026-10-01, as built):**
+
+- **Escape is Recharts' own,** not our code (decision 29's update).
+- **The label can't be hovered.** It sits beside the active column, and moving the pointer onto it selects the month underneath, so the label moves there. The sentence above about moving the mouse onto it holds only in the sense that a label stays on screen. Every number in a label is also in the table.
+- **Two small quirks of Recharts, accepted:** the first month's label shows by itself only the first time the chart gets keyboard focus, and while the pointer rests on a column the arrow keys don't change the label.
+
 **Options considered:**
 
 - No labels, exactly like the design: the table already has every number, but the chart is harder to read.
@@ -439,8 +482,8 @@ Screen readers get the caption as part of the chart's description. They aren't i
 
 **Decision:** A slim bar at the very top of the page, above the design:
 
-- On the left, the tabs: "Dashboard" and "Docs", plus "Components" (added by decision 37).
-- On the right, the demo switches (decision 11), shown only on the Dashboard tab.
+- On the left, the tabs: "Implementation" (the dashboard itself) and "Docs", plus "Components" (added by decision 37). The first tab was called "Dashboard" until 2026-10-01, when the repo owner renamed it.
+- On the right, the demo switches (decision 11), shown only on the Implementation tab.
 - On phones, the bar wraps onto two lines.
 
 Everything meant for reviewers sits in this bar. Everything below it is the product, exactly as designed.
@@ -592,9 +635,28 @@ The page never imports server code; both import the contract. On Vercel it's one
 **What changes in decision 18:**
 
 - Kept: one Tab stop, ← / → between months with the label following, hover and tap, and the label's content (month, parts, total from the server).
-- Escape to hide the label isn't built in, so we add it (Recharts lets us control whether the label shows). To be confirmed with a quick test.
+- Escape to hide the label isn't built in, so we add it (Recharts lets us control whether the label shows). To be confirmed with a quick test. (Tested in Task 9: Recharts 3.10.1 does have it built in, so we add nothing. See the update below.)
 - Home / End are dropped: with at most 12 months, ← / → is enough.
 - Screen readers hear each month's label read aloud as focus moves, instead of every bar carrying its own label. Recharts adds that announcement only to its default label, so our own label must add it back itself.
+
+**Update (2026-10-01, the chart as built):** choices whose reasons aren't visible in the code:
+
+- **No Escape code of ours.** Recharts 3.10.1 hides the label on Escape by itself, listening on the whole page, so it also works while the pointer rests on a column and keyboard focus is elsewhere. Our own handler on top disagreed with it in small ways, so it was removed.
+- **The chart is named by its visible caption** (`aria-labelledby`), not by Recharts' `title`. A `title` becomes the picture's built-in title, which browsers show as their own tooltip on hover, on top of our label.
+- **The label's card is drawn by the chart; the feature supplies the content.** The same content is also placed in a hidden region that screen readers announce, and the visible card is hidden from them so the text isn't read twice.
+- **One rule for the narrow look, from the chart's own width:** when a month has less than 64px, the month labels are tilted at 60° in 11px text and the columns sit 0.5rem apart. The plot gets a little shorter there, because tilted labels need 64px under it instead of 30px. Tilted labels are always all shown; horizontal ones are left out when they would touch. A rule tied to the page's width would break a chart sitting in a narrow box on a wide page. With twelve months it starts below a window of about 870px.
+- **The axis has five round steps, as in Figma** (0, 100, 200, 300, 400). The price: when the tallest column is just over a round step, the axis jumps to the next one and half the plot stays empty (a peak of 214 gets an axis to 400).
+- **The chart's colours are declared in the chart's own CSS file,** because only the chart uses them (decision 41's rule).
+- **A series names its colour** (`color: "lavender"`), and the chart turns the name into the matching CSS variable. Only the five palette names are allowed (`ChartColor`), so a typo or a colour from outside the palette is a compile error, and code that uses the chart never writes a CSS variable itself.
+- **The chart's own names say "column", not "month"** (`columnNames`, `renderLabel(columnIndex)`). It's a generic component that knows nothing about what its columns stand for; the dashboard is what passes months.
+- **The numbers handed to Recharts are plain pixels,** because it draws a picture with its own units. They reproduce Figma's plot: 8px above the plot, a 320px plot and a 30px axis make Figma's 358px; the y axis is 38px (26px of labels and a 12px gap); columns stop growing at 88px; the label's card sits 40px from the top and 8px beside the band.
+- **Axis text may leave the picture's box.** With very large browser text the labels then show in the card's padding instead of being cut off.
+- **One focus outline around the whole chart.** Recharts moves keyboard focus between its inner layers, so the outline is drawn on the chart's wrapper whenever anything inside it has keyboard focus.
+- **The columns never change width while they grow in.** The chart starts in its narrow look for one render, until Recharts reports its width; that is corrected before anything is painted (measured at 900px and 1100px windows).
+- **Weight, measured:** Recharts adds 102 kB compressed (the estimate was 116). The main script reached 853 kB before compression, so the build now puts each of the three libraries in its own file: React 219 kB, React Aria 269 kB and Recharts 350 kB, which leaves 15 kB for our own code. The first visit downloads the same total. After an update to our code, returning visitors re-download only our own file (6 kB compressed), and Vite's 500 kB warning is gone.
+- **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, one, three and five series, and a production build.
+- **Not checked:** Safari, a real phone, and a screen reader by ear (decision 14).
+- **Known limits, accepted:** on a phone, a swipe that starts on the chart leaves that column's label showing until a tap elsewhere; with browser text at 200% in a 375px window the label's card is wider than the chart.
 
 **Cost:**
 
@@ -611,7 +673,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 30. The two tab addresses are handled by wouter
 
-**Decision:** [wouter](https://github.com/molefrog/wouter), a tiny router, switches between `/` (Dashboard) and `/docs` (Docs), makes Back and Forward work, and lets the Docs page load only when it's opened.
+**Decision:** [wouter](https://github.com/molefrog/wouter), a tiny router, switches between `/` (the dashboard) and `/docs` (Docs), makes Back and Forward work, and lets the Docs page load only when it's opened.
 
 **Why:** It's tiny (about +2 KB compressed), its API is close to React Router's (`Route`, `Link`, `Switch`, `useLocation`), and it covers everything two pages need. It's also a chance to try something new at little risk.
 
@@ -741,9 +803,9 @@ Versions and popularity checked on 2026-10-01: ESLint 10.11 (185M weekly downloa
 
 ## 37. A "Components" tab shows our UI components
 
-**Decision:** A third tab, "Components" (`/components`), between Dashboard and Docs. It's a gallery page that shows each component from our own small design system (`ui/`) in its main states, with small sample data, for example:
+**Decision:** A third tab, "Components" (`/components`), between Implementation and Docs. It's a gallery page that shows each component from our own small design system (`ui/`) in its main states, with small sample data, for example:
 
-- the table with rows open and closed, and a row with nothing inside
+- the table, as one live example: clicking opens and closes its rows, and one row has nothing inside
 - the chart with one, three and five colours
 - the avatar with a photo and with initials
 - the dropdown and the switches
@@ -811,7 +873,7 @@ It stays generic, knowing nothing about clients, and TypeScript checks that ever
   - Keyboard focus: a 2px outline in the ink colour.
 - **Behaviour defaults:**
   - Every row gets the design's hover shade (a reading aid across 12 columns), but only rows that can open show the "clickable" hand cursor.
-  - Numbers have thousands separators, and months read "Feb 2024" ("Feb" on phones, decision 15).
+  - Numbers have thousands separators, and months read "Feb 2024" (tilted under the chart on phones, decision 15).
   - The chevron turns smoothly and the chart's bars move briefly when they change. With the system's "reduce motion" setting on, nothing animates.
   - Browser tab titles: "Clients · Nevis home task", with matching titles for Components and Docs.
   - The code survives cases our data doesn't have: a company with no branches shows the company row alone, and a row with nothing to split shows a single colour.

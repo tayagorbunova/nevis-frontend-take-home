@@ -9,7 +9,11 @@ const exampleModules = import.meta.glob<ExamplesModule>("../../ui/**/*.examples.
 });
 
 const sections = Object.values(exampleModules)
-  .map(({ meta, examples }) => ({ title: meta.title, examples: Object.entries(examples) }))
+  .map(({ meta, examples }) => ({
+    title: meta.title,
+    wide: meta.wide,
+    examples: Object.entries(examples),
+  }))
   .sort((a, b) => a.title.localeCompare(b.title));
 
 function toCaption(exampleName: string) {
@@ -22,19 +26,23 @@ export function GalleryPage() {
       <title>Components · Nevis home task</title>
       <h1>Components</h1>
 
-      {sections.map(({ title, examples }) => (
+      {sections.map(({ title, wide, examples }) => (
         <section key={title} className={styles.section}>
           <h2 className={styles.name}>{title}</h2>
 
           <div className={styles.examples}>
             {examples.map(([exampleName, Example]) => (
-              <figure key={exampleName} className={styles.example}>
+              <figure key={exampleName} className={wide ? styles.wideExample : styles.example}>
                 <figcaption className={styles.caption}>{toCaption(exampleName)}</figcaption>
 
                 <Card variant="unpadded">
-                  <div className={styles.stage}>
+                  {wide ? (
                     <Example />
-                  </div>
+                  ) : (
+                    <div className={styles.stage}>
+                      <Example />
+                    </div>
+                  )}
                 </Card>
               </figure>
             ))}

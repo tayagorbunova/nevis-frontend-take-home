@@ -11,8 +11,8 @@ import {
 
 import styles from "./Select.module.css";
 
-const chevronDownPath = "M4.5 6.5L8 10L11.5 6.5";
-const checkPath = "M3.5 8.5L6.5 11.5L12.5 5.5";
+const CHEVRON_DOWN_PATH = "M4.5 6.5L8 10L11.5 6.5";
+const CHECK_PATH = "M3.5 8.5L6.5 11.5L12.5 5.5";
 
 type IconProps = { path: string };
 
@@ -59,7 +59,7 @@ export function Select<Id extends string>({
 
       <Button className={styles.trigger}>
         <SelectValue />
-        <Icon path={chevronDownPath} />
+        <Icon path={CHEVRON_DOWN_PATH} />
       </Button>
 
       <Popover className={styles.popover} offset={4}>
@@ -69,7 +69,7 @@ export function Select<Id extends string>({
               {({ isSelected }) => (
                 <>
                   {item.label}
-                  {isSelected && <Icon path={checkPath} />}
+                  {isSelected && <Icon path={CHECK_PATH} />}
                 </>
               )}
             </ListBoxItem>
