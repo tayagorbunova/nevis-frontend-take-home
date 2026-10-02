@@ -42,7 +42,7 @@ Every task follows these, on top of its own requirements.
 - **Components without a Figma design** follow the look approved in Task 5, recorded in §5.9. The mockup itself was a local working file and isn't in the repo.
 - **Copy:** exactly as written in §5.2, §5.5 and §5.7, e.g. "Couldn't load clients", "Try again", "Demo settings", "Slow responses", "Fail requests", "Client counts per month".
 - **No comments in the code,** config files included. The code has to be clear by itself: if something seems to need a comment, rename or simplify it. Reasons for settings that aren't obvious go in decisions.md. Lint rule messages give their reason in words, without doc numbers. A comment goes in only where the repo owner asks for one; so far that's the demo behaviour in the API.
-- **Code style:** double quotes (Prettier's default); blank lines between logical steps; object shapes with `type`, never `interface`; a component that takes children types its props with `PropsWithChildren<…>`.
+- **Code style:** double quotes (Prettier's default); blank lines between logical steps; object shapes with `type`, never `interface`; a component that takes children types its props with `PropsWithChildren<…>`. A fixed value declared at the top of a file (a number, a string, a settings object) is named in `UPPER_CASE`, like `DEMO_DELAY_MS`; values worked out at run time and sample data in examples files stay in `camelCase`.
 - **Nothing for problems that don't exist yet:** no defensive code for cases that can't happen, and no rules or settings without a use today. A review finding becomes a change only if it fixes something broken or visible today, or makes the code simpler.
 - **Tests:** none before Task 15, where the list is agreed with the repo owner and then written.
 - **Every task ends green:** `npm run typecheck && npm run lint && npm run format:check && npm run build` (plus the tests, once Task 15 adds them), then a commit with a conventional message.
@@ -70,7 +70,7 @@ Every task follows these, on top of its own requirements.
 - **Recharts 3.10:**
   - `<BarStack radius={4}>` rounds each whole column.
   - Its keyboard layer is on by default: the SVG is one Tab stop (`tabindex="0"`, `role="application"`), and ← / → move the label.
-  - Passing `active={false}` to `Tooltip` hides the label, which is how Escape works.
+  - Passing `active={false}` to `Tooltip` hides the label. (Task 9 found that Recharts 3.10.1 handles Escape by itself, so this isn't used.)
   - `isAnimationActive` defaults to `'auto'`, which respects reduced motion.
 - **Tooling:** `eslint-plugin-jsx-a11y` 6.10 supports ESLint only up to version 9, so it isn't installed (D33).
 - **For the testing step (Task 15):**
@@ -346,7 +346,7 @@ type TreeTableProps<Row> = {
 
 **Steps:**
 
-- [ ] Build it. Check the keyboard (D14), and check with VoiceOver that each row's level, position and open state are announced.
+- [ ] Build it. Check the keyboard (D14), and check in the browser's accessibility tree that each row carries its name, level, position and open state. (Not checked by ear with VoiceOver: D14.)
 - [ ] Commit `feat(ui): add TreeTable`.
 
 ### Task 9: StackedColumnChart
@@ -356,15 +356,16 @@ type TreeTableProps<Row> = {
 **Produces:**
 
 ```ts
-type ChartSeries = { id: string; name: string; color: string; values: readonly number[] };
+type ChartColor = "lavender" | "peach" | "maroon" | "sage" | "mustard"; // the chart turns the name into its CSS variable
+
+type ChartSeries = { id: string; name: string; color: ChartColor; values: readonly number[] };
 
 type StackedColumnChartProps = {
   title: string; // the visible caption and the chart's accessible name
   description: string; // for screen readers (the SVG's <desc>)
-  monthLabels: readonly string[]; // "Feb 2024"
-  shortMonthLabels: readonly string[]; // "Feb ’24", "Mar", …, for narrow columns
+  columnNames: readonly string[]; // one per column, e.g. "Feb 2024"
   series: readonly ChartSeries[]; // bottom to top
-  renderLabel: (monthIndex: number) => ReactNode;
+  renderLabel: (columnIndex: number) => ReactNode;
 };
 ```
 
@@ -373,22 +374,22 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 **Notes:**
 
 - **Drawing:**
-  - `<BarChart responsive>` with `title` and `desc`, and one `<BarStack radius={4}>` holding a `<Bar>` per series
+  - `<BarChart responsive>` with `desc`, named by its caption through `aria-labelledby` (Recharts' `title` becomes a browser tooltip on hover), and one `<BarStack radius={4}>` holding a `<Bar>` per series
   - `barCategoryGap={12}` gives the design's 24px between columns, because Recharts applies the gap on both sides
   - `maxBarSize` stops the columns growing past the design's width
   - the y axis has 5 "nice" ticks, labels 12px at 60% ink, and no axis lines
   - dotted gridlines: `strokeDasharray="1 6"` with the gridline token
 - **The label:** Recharts' `Tooltip` renders `renderLabel(index)` inside the approved card.
-- **Escape:** a wrapper `onKeyDown` marks the label as dismissed, which passes `active={false}` to `Tooltip`. Any other key, or a pointer move, clears it.
+- **Escape:** nothing of ours. Recharts 3.10.1 hides the label on Escape by itself, until the month changes or the pointer moves.
 - **Announcements:** Recharts announces only its default label. So an always-present, visually hidden `role="status"` region holds the active month's label. Take the active month from Recharts 3's hooks (e.g. `useActiveTooltipLabel`) or from the tooltip content, whichever stays simpler.
-- **Colours:** bars use `var(--color-chart-n)`. Check that this works as an SVG fill in Chrome, Firefox and Safari.
-- **Narrow screens:** use the short labels when the plot is too narrow for the long ones; check at 320px and 375px. The design's 24px between columns can't fit at 375px, so the columns are 0.5rem apart there (§5.9).
+- **Colours:** bars use `var(--color-chart-n)`, declared in the chart's own CSS file. Checked as an SVG fill in Chrome and Firefox; Safari wasn't run.
+- **Narrow screens:** one rule from the chart's own width: when a month has less than 64px, the month labels are tilted at 60° in 11px text and the columns sit 0.5rem apart; otherwise horizontal labels and the design's 24px. Checked at 320px and 375px. (The first version shortened the labels instead, through a `shortMonthLabels` prop; the repo owner preferred the full labels, tilted.)
 - **The legend** is an HTML list below the chart, hidden when there's only one series, since the title already names it.
-- **Examples:** one, three and five series, and a narrow box.
+- **Examples:** one live example, `Default` (three series, twelve months). One series, five series and a narrow box were checked with temporary examples and removed.
 
 **Steps:**
 
-- [ ] Build it. Check hover, tap and the keyboard (Tab, ← / →, Escape), and check with VoiceOver.
+- [ ] Build it. Check hover, tap and the keyboard (Tab, ← / →, Escape), and check what the announcement region says as the month changes. (Not checked by ear with VoiceOver: D14.)
 - [ ] Commit `feat(ui): add StackedColumnChart`.
 
 ### Task 10: The table's rules
@@ -423,13 +424,12 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 - `type ChartModel = { caption: string; description: string; series: ChartSeries[]; totals: number[] }`
 - `chartModel(subject: ChartSubject, months: readonly string[]): ChartModel` (§5.4):
   - `caption`: "<name> by <level of the children>", or just the name when not split
-  - `series`: coloured `var(--color-chart-1)` to `var(--color-chart-5)` in order, then `var(--color-chart-other)`
+  - `series`: coloured in D17's order, `lavender`, `peach`, `maroon`, `sage`, `mustard` (the chart's `ChartColor` names; the type allows only these five). The data never has more than five parts. If a sixth has to be handled, add a grey to the chart's palette and to `ChartColor` first (D17)
   - `totals`: the subject's own values, never summed
   - `description`, e.g. "Company by branch, February 2024 to January 2025. Exact numbers are in the table below." With a single month, there's no range.
 - Formatting, with `Intl`, `en-US` and `timeZone: 'UTC'`:
   - `formatMonth('2024-02')` → "Feb 2024"
   - `formatMonthLong('2024-02')` → "February 2024"
-  - `shortMonthLabels(months)` → "Feb ’24", "Mar", …, "Jan ’25": the year appears only on the first month and on each January (D15)
   - `formatCount(value: number | undefined)` → "1,234", or "—" when the value is missing
 
 **Steps:**

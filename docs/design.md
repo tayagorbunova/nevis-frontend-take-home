@@ -217,7 +217,7 @@ Each has its examples file for the Components tab.
 | Component | Style | API (sketch) | Notes |
 |---|---|---|---|
 | `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]` | See below |
-| `StackedColumnChart` | props + render function | `title`, `description`, `monthLabels`, `shortMonthLabels`, `series`, `renderLabel(monthIndex)` | See below; a `<figure>` whose caption is the title |
+| `StackedColumnChart` | props + render function | `title`, `description`, `columnNames`, `series`, `renderLabel(columnIndex)` | See below; a `<figure>` whose caption is the title |
 | `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>` built on wouter's `Link` and current location; the current tab gets `aria-current="page"`; styled per D39 |
 | `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange`, `isDisabled?` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); with `hideLabel` the label isn't drawn and becomes the control's `aria-label` |
 | `Switch` | plain props | `children` (label), `isSelected`, `onChange`, `isDisabled?` | React Aria's `SwitchField` and `SwitchButton`, the pair its docs show (the library's older single `Switch` export is deprecated in 1.21) |
@@ -258,9 +258,10 @@ Each has its examples file for the Components tab.
   - x labels 12px, centred
   - the legend centred below: 8×8 squares with 2px corners
   - columns stop growing at the design's width on very wide screens
-- **Keyboard:** Recharts' built-in layer gives one Tab stop and ← / → between months. We add Escape to hide the label, by controlling whether the label shows (to be confirmed with a quick test).
-- **The label** is rendered by the feature through `renderLabel`, inside a region marked `role="status"` with polite announcements. Recharts adds announcements only to its default label, so we add them ourselves (D29).
-- **Narrow screens:** month labels shorten to "Feb", with the year only on the first month and on January, and labels that don't fit are left out (D15).
+- **Keyboard:** Recharts' built-in layer gives one Tab stop, ← / → between months, and Escape to hide the label. We add no keyboard code of our own (D29).
+- **The label:** the chart draws the white card, and the feature supplies what's inside through `renderLabel`. The same content is also placed in an always-present, visually hidden region marked `role="status"`, so screen readers hear the active month. Recharts adds announcements only to its default label, so we add them ourselves (D29).
+- **The chart's name** for screen readers is its visible caption (`aria-labelledby`), and `description` becomes the picture's `<desc>`. Recharts' own `title` is not used: browsers show it as their own tooltip on hover.
+- **The narrow look** depends on the chart's own width, not the page's: when a column has less than 64px of space, the chart tilts the names under the columns (the same "Feb 2024", at 60° and a little smaller, 11px) and puts 0.5rem between columns. Every column keeps its name (D15). The chart itself knows nothing about months: it gets one name per column. With twelve months that starts below a window of about 870px.
 
 ### 5.7 Feature components
 
@@ -292,11 +293,11 @@ Each has its examples file for the Components tab.
   - `--color-text`: #141413, Content/Primary
   - `--color-text-muted`: the ink at 60%, Content/Secondary
   - `--color-border`: the ink at 8%, Outline/Line solid
-  - `--color-gridline`: the ink at 16%, Outline/Line dotted
+  - `--color-gridline`: the ink at 16%, Outline/Line dotted (declared in the chart's own CSS file: only the chart uses it)
   - `--color-row-hover`: `#f6f6f6`, Surface/Secondary. That's the ink at 4% on white, written as an opaque colour so the pinned table column covers what scrolls under it
   - `--color-page`: #F7F5ED, Background/Primary
   - `--color-card`: #FFFFFF, Background/Secondary
-  - `--color-chart-1` … `--color-chart-5` (D17) and `--color-chart-other`, a neutral grey
+  - the chart's five colours (D17): `--color-chart-lavender`, `-peach`, `-maroon`, `-sage` and `-mustard`, declared in the chart's own CSS file while only the chart uses them. A neutral grey for a sixth part is added when something needs it
 - **Type:** Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25).
 - **Spacing** in rem, for example 0.5, 1, 1.125, 1.5 and 1.75rem (8, 16, 18, 24 and 28px).
 - **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), and `--duration-fast` (150ms), shared by the switch's thumb and the table's arrow.
@@ -309,7 +310,7 @@ Each has its examples file for the Components tab.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
 - Every state of every interactive component is styled and shown in the Components tab.
-- **Desktop first:** base styles follow the design's desktop layout, and a few media queries in rem adjust narrow screens: the dropdown moves under the title, the top bar wraps, and the table scrolls sideways (D15). The chart shortens its month labels based on its own width, which Recharts reports.
+- **Desktop first:** base styles follow the design's desktop layout, and a few media queries in rem adjust narrow screens: the dropdown moves under the title, the top bar wraps, and the table scrolls sideways (D15). The chart tilts its month labels based on its own width, which Recharts reports.
 - Elements containing text get no fixed height (minimum height plus padding instead), long names wrap, and flex or grid children that hold text can shrink.
 - Only `transform` and `opacity` are animated, with the properties listed explicitly (never `transition: all`). Non-essential motion lives inside `@media (prefers-reduced-motion: no-preference)`. The row hover shade appears instantly.
 - Global CSS holds only the reset, the tokens, the font and base element styles.
@@ -317,7 +318,7 @@ Each has its examples file for the Components tab.
 
 **Font:** `@fontsource-variable/inter/opsz.css`, the Latin file only, served from our own site (D32). `font-optical-sizing: auto` picks the Display cut at 35px. Table numbers use tabular figures.
 
-**Focus:** a 2px outline in the ink colour, drawn inside rows and cells. Every table cell after the name column has a left scroll margin equal to the name column's width, so a focused cell never hides behind the pinned column (WCAG 2.4.11). A focused row draws its outline from the pinned name cell, as wide as the scrolling box, because an outline on the row itself is covered by that cell.
+**Focus:** a 2px outline in the ink colour, drawn inside rows and cells, with the card's corner radius so the card's rounded corners don't cut it. Every table cell after the name column has a left scroll margin equal to the name column's width, so a focused cell never hides behind the pinned column (WCAG 2.4.11). A focused row draws its outline from the pinned name cell, as wide as the scrolling box, because an outline on the row itself is covered by that cell.
 
 **Motion:**
 
@@ -334,6 +335,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 
 - `--color-control-border`: ink at 16%, the line around controls and floating cards. Figma's own line (ink at 8%) nearly disappears on a white control inside a white card.
 - `--color-tint`: ink at 8%, for the initials circle, the placeholders and inline code.
+- `--shadow-floating`: `0 0.25rem 1rem` in ink at 10%, shared by the dropdown's list and the chart label's card.
 - `--opacity-refreshing`: 0.6.
 - `--control-height`: 2.25rem (36px).
 - `--color-chart-other`: `#c7c7c6`.
@@ -342,7 +344,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 
 - Button: `--color-pressed`, ink at 8%.
 - Switch: `--color-switch-off`, ink at 60%.
-- Dropdown list: `--shadow-floating`, `0 0.25rem 1rem` in ink at 10%. The chart label has the same shadow, so it moves to `:root` when the chart is built.
+- Chart: its five colours and the gridline colour (§5.8).
 - Spinner: `--duration-spin`, 800ms per turn.
 - Placeholder: `--duration-pulse`, 1s per pulse.
 - Components page: `--space-32` (2rem between sections), and `--font-size-heading` with `--line-height-heading` (the 20/28 section names).
@@ -395,7 +397,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - A month column never gets narrower than 4rem (64px). When "Feb 2024" doesn't fit on one line, the header wraps to "Feb" over "2024". All headers wrap together, once a column has less than 4.25rem for its text; left alone, they would wrap one by one, because "Jul 2024" is narrower than "May 2024". So all twelve months fit without sideways scrolling down to a window about 1100px wide; below that the table scrolls inside its card, with the names pinned.
 - Below 40rem (640px), the name column is 10.5rem (168px) with a 1px line on its right edge, indents are 0.5rem per level, and names may wrap onto two lines. At 375px that shows two whole months and part of a third, which hints at the scrolling.
 
-**The rest of the page below 40rem:** the top bar wraps onto two lines (tabs, then the demo group), the dropdown sits under the title, and the chart's columns are 0.5rem apart.
+**The rest of the page below 40rem:** the top bar wraps onto two lines (tabs, then the demo group), and the dropdown sits under the title. The chart's narrow look follows its own width (§5.6).
 
 **Favicon:** three rising columns on a 16 × 16 grid, each stacked in lavender, peach and maroon.
 
@@ -428,7 +430,7 @@ Measured as compressed JavaScript over React's own 67 KB (D13, D26, D27, D29–D
 
 | Loaded | Adds |
 |---|---|
-| On every page | React Aria about 84 KB, Recharts about 116, TanStack Query about 10, Zod Mini about 5, wouter about 2: roughly **280 KB** in total with React |
+| On every page | React Aria about 84 KB, Recharts about 116, TanStack Query about 10, Zod Mini about 5, wouter about 2: roughly **280 KB** in total with React. Measured after the chart was built, before data loading: 258 KB, in four files (React 68, React Aria 82, Recharts 101, our own code 6) |
 | Only on the Docs tab | react-markdown + remark-gfm, about 48 KB |
 | Only on the Components tab | the examples |
 | The font | 71 KB, cached after the first visit |
