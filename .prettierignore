@@ -1,5 +1,2 @@
 package-lock.json
-dist
-coverage
-private
 *.md
