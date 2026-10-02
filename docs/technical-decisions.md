@@ -7,7 +7,7 @@
 - **Shared:** Zod, ESLint, Prettier, npm workspaces
 - **Client:** React, Vite, React Aria Components, Recharts, TanStack Query, wouter, CSS Modules
 
-As you can see, I've used quite a few external libraries. I approached this project as I would a real product, and most of these are tools I'd normally reach for. Let me explain the main choices.
+I approached this project as I would a real product, and most of these are tools I'd normally reach for. Let me explain the main choices.
 
 ## React Aria Components
 
@@ -21,7 +21,7 @@ Recharts is a widely used React charting library, and it's actively maintained. 
 
 It's wrapped in my own chart component, so the rest of the app never imports Recharts directly.
 
-The main alternatives considered:
+The main alternatives I considered were:
 
 - **Chart.js:** the second most popular, and half the size. But it draws on a canvas, so the bars aren't separate elements that the keyboard, a screen reader or a test can reach. It also seems less actively maintained at the moment.
 - **visx:** low-level building blocks from Airbnb. Small and flexible, but I'd have to build more of the chart myself, including its keyboard and screen-reader support.
@@ -43,7 +43,7 @@ I considered using SCSS with CSS Modules because the job description mentions it
 
 ## State management
 
-One thing I deliberately left out is a separate library for client state. That decision can't be made from a small slice of a product like this take-home.
+One thing I deliberately left out is a separate library for client state. I wouldn't choose a library for the wider product based on this page alone.
 
 To pick one, I'd want to know what the rest of the app's state looks like: what needs to be stored, which screens share it, and what should survive a reload.
 
@@ -56,4 +56,4 @@ A quick note on the rest:
 - **Hono:** a small server framework that suits an API with a single endpoint.
 - **Zod:** defines shared data schemas for the server and client, with runtime validation.
 - **npm workspaces:** npm comes with Node.js, so there's no need to install another package manager. For a bigger monorepo, I'd probably pick pnpm for its speed and stricter dependency isolation.
-- **react-markdown:** renders these docs in the app. It's here only for this take-home; a real product wouldn't need it.
+- **react-markdown:** renders these docs in the app. It's included here so reviewers can read the docs alongside the app.
