@@ -83,7 +83,7 @@ ApiCompany  = { id: string; name: string; values: number[]; branches?: ApiBranch
 ClientCountsResponse = { months: string[]; company: ApiCompany }   // months as "YYYY-MM"
 ApiErrorBody = { error: { code: 'invalid_period' | 'internal_error'; message: string } }
 
-export const DEMO_HEADER = 'X-Demo';   // values: "slow", "fail", or "slow, fail"
+export const DEMO_HEADER = 'X-Demo';   // values: "slow", "fail", or "slow,fail"
 ```
 
 The rules the schemas enforce:
@@ -152,14 +152,15 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
 
 ### 5.3 Page state (D28, section 1 of the design review)
 
-`App` holds two pieces of state and passes them down as props. No context and no state library.
+`App` holds three pieces of state and passes them down as props. No context and no state library.
 
 - **`period: Period`**, starting at `DEFAULT_PERIOD`.
 - **`openedRowIds: string[] | null`**, the opened rows in the order they were opened.
   - `null` means "the default": only the company row is open (D2).
   - The company's id comes from the data, so the effective list is `openedRowIds ?? [tree.id]`.
+- **`demoSettings: DemoSettings`**, the two demo switches, both off at the start (D11).
 
-Everything else is worked out from these two values, never stored. The data itself lives in TanStack Query's cache, above the tabs, so returning from Docs shows it instantly. The demo settings live in `localStorage` (§5.5).
+Everything else is worked out from these values, never stored. Nothing is saved in the browser, so a reload starts fresh. The data itself lives in TanStack Query's cache, above the tabs, so returning from Docs shows it instantly (for five minutes, the library's default for data nothing is using).
 
 **The opened-rows rules** (`features/clients/model/openedRows.ts`, pure):
 
@@ -195,12 +196,13 @@ Everything else is worked out from these two values, never stored. The data itse
   - Requests `/api/client-counts?period=…`, adding `X-Demo` only when a switch is on.
   - A non-2xx answer throws `ApiError { status, code }`, reading the error shape when it's there.
   - A 2xx answer is checked with the contract; a failed check throws `InvalidResponseError`.
-- **`useClientCounts(period)`:** `useQuery` with these settings:
-  - `queryKey: ['client-counts', period]`
+- **`useClientCounts(period, demoSettings)`:** `useQuery` with these settings:
+  - `queryKey: ['client-counts', period, demoSettings]`
   - `placeholderData: keepPreviousData`, so the old numbers stay while a new period loads
+- **The cache** (`createQueryClient()`) changes two of the library's defaults for every request:
   - `retry: false`, because "Try again" is manual and automatic retries would hide the demo's failure for several seconds
   - `refetchOnWindowFocus: false`, so switching windows doesn't quietly trigger reloads
-- **Demo settings:** stored as `{ slow: boolean, fail: boolean }` under one `localStorage` key. Reading and writing are wrapped so a blocked `localStorage` just means "both off". Changing a switch reloads the current data straight away, so its effect is visible without extra clicks.
+- **Demo settings:** `{ slow: boolean, fail: boolean }`, plain state in `App`, handed to the top bar's switches and to `useClientCounts`. They are part of the request's cache key, so changing a switch is a new request straight away, and its effect is visible without extra clicks. They aren't saved: a reload starts with both off.
 - **What the dashboard shows:**
 
 | State | What's on screen |
@@ -216,7 +218,7 @@ Each has its examples file for the Components tab.
 
 | Component | Style | API (sketch) | Notes |
 |---|---|---|---|
-| `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]` | See below |
+| `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]`, `emptyMessage?` | See below |
 | `StackedColumnChart` | props + render function | `title`, `description`, `columnNames`, `series`, `renderLabel(columnIndex)` | See below; a `<figure>` whose caption is the title |
 | `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>` built on wouter's `Link` and current location; the current tab gets `aria-current="page"`; styled per D39 |
 | `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange`, `isDisabled?` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); with `hideLabel` the label isn't drawn and becomes the control's `aria-label` |
@@ -246,6 +248,7 @@ Each has its examples file for the Components tab.
 - **The chevron** is the design's path `M6.5 4.5L10 8L6.5 11.5` (16px, 1.5px stroke, square caps), pointing right and turned 90° when open. It's a decorative icon, hidden from screen readers; the row itself is the control (D13).
 - **The gap between columns** (16px in Figma) is 8px on each side of every cell, so the outline of a focused cell doesn't touch its number. Names and numbers sit exactly where Figma puts them.
 - **Numbers** in the columns after the name use tabular figures, so digits line up from row to row. Names keep the font's normal figures.
+- **With no rows,** the table shows its header and one row with `emptyMessage` in 60% ink, centred in the visible part of the table even when it is scrolled sideways. The dashboard's table always has the company row, so only the Components tab shows this state.
 
 **`StackedColumnChart`** wraps Recharts (D29):
 
@@ -305,7 +308,7 @@ Each has its examples file for the Components tab.
 
 **Rules for component CSS** (D41):
 
-- `:root` holds only the variables that two or more components share: colours, text sizes, spacing, radii, borders and the focus ring. A variable that a single component uses is declared in that component's CSS file, on the component's own element: for example `--color-pressed` in the button's file and `--duration-spin` in the spinner's. It moves to `:root` when a second component needs it. A one-off size is written where it's used, such as the top bar's height. Colours are always variables, never written straight into a property.
+- `:root` holds only the variables that two or more components share: colours, text sizes, spacing, radii, borders and the focus ring. A variable that a single component uses is declared in that component's CSS file, on the component's own element: for example `--color-pressed` in the button's file and `--duration-spin` in the spinner's. It moves to `:root` when a second component needs it. A one-off size is written where it's used, such as the table header's height. Colours are always variables, never written straight into a property.
 - `ui/` components are closed: no `className` or `style` props, so looks change only through props such as `variant`.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
@@ -397,7 +400,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - A month column never gets narrower than 4rem (64px). When "Feb 2024" doesn't fit on one line, the header wraps to "Feb" over "2024". All headers wrap together, once a column has less than 4.25rem for its text; left alone, they would wrap one by one, because "Jul 2024" is narrower than "May 2024". So all twelve months fit without sideways scrolling down to a window about 1100px wide; below that the table scrolls inside its card, with the names pinned.
 - Below 40rem (640px), the name column is 10.5rem (168px) with a 1px line on its right edge, indents are 0.5rem per level, and names may wrap onto two lines. At 375px that shows two whole months and part of a third, which hints at the scrolling.
 
-**The rest of the page below 40rem:** the top bar wraps onto two lines (tabs, then the demo group), and the dropdown sits under the title. The chart's narrow look follows its own width (§5.6).
+**The rest of the page on narrow screens:** below 42rem the top bar goes onto two lines (tabs, then the demo group), because that is where its two halves stop fitting on one line; below 40rem the dropdown sits under the title. The chart's narrow look follows its own width (§5.6).
 
 **Favicon:** three rising columns on a 16 × 16 grid, each stacked in lavender, peach and maroon.
 

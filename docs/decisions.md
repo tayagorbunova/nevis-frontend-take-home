@@ -179,7 +179,7 @@ It uses the design's existing styles: Inter 14px, the same thin borders and colo
 - **Slow responses:** every request takes an extra 2 seconds.
 - **Fail requests:** every request fails.
 
-When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too.
+When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too. (Dropped on 2026-10-02: see the update below.)
 
 **Update (2026-10-01):** the server always obeys these notes. An earlier version had a "demo mode" setting to switch that off, but nothing used the off state: the app runs as a demo everywhere, and a note only affects the request that carries it, so nobody can slow or fail the site for anyone else. A real product wouldn't ship the demo switches at all.
 
@@ -190,6 +190,13 @@ When a switch is on, the app adds a note to each request, and the server really 
 - The app fakes the delay and the error itself: the server stays untouched, but the real error path is never exercised.
 - A collapsible panel: takes less space, but reviewers might never open it.
 - Only README instructions (browser developer tools, stopping the server): no code, but easy to miss.
+
+**Update (2026-10-02, as built):**
+
+- The two switches sit in the top bar, on the first tab only. A change starts a new request at once, also while another one is still running.
+- **The switches are not remembered.** They are ordinary page state next to the period and the opened rows, and a reload starts with both off. The first version saved them in the browser so that the first-load placeholders could be watched for two seconds after a reload. The repo owner dropped that: it took about 70 lines (reading and writing the storage, checking what was saved, a store outside React) for something the take-home doesn't need. The price: the first-load placeholders are only visible for a moment, on a real first load.
+- While a slow request runs, the numbers already on screen stay, faded, with the spinner; a failing one ends in the error message.
+- The top bar goes onto two lines below 42rem, not 40rem: with the first tab named "Implementation", the tabs and the demo group need about 664px to share a line.
 
 ## 12. Hosted on Vercel
 
@@ -308,6 +315,7 @@ Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 - **The table's focus outlines have the card's corner radius.** A square outline on the last row, or on a cell in a corner, was cut off by the card's rounded corner.
 - **All month headers break into two lines together,** once a column has less than 4.25rem for its text. Left alone they wrapped one by one in windows around 1280px wide, because "Jul 2024" is narrower than "May 2024".
 - **The space after the last column is an empty cell drawn by CSS** at the end of every row. Padding on the last cell instead would put the last number closer to its neighbour than the others are.
+- **An empty state** (added 2026-10-02 at the repo owner's request): with no rows the table shows its header and one row with a message the caller passes (`emptyMessage`). The message stays centred in the visible box when the table is scrolled sideways. The Components tab has an example of it.
 - **Numbers use tabular figures; names don't.** In Inter, tabular figures also widen the hyphen and the digit 1, so a name like "North-Western" would read "North - Western".
 - **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, and an automated accessibility scan with no findings.
 - **Not checked:** a real screen reader by ear (the names above are what the browser hands to one, not what was heard; decision 14 says why), Safari, and a real phone.
@@ -584,6 +592,14 @@ The page never imports server code; both import the contract. On Vercel it's one
 - Our own small helper around `fetch` (about 60–80 lines): no dependency, but we'd rebuild what TanStack Query already does and have to test those tricky cases ourselves.
 - React 19's newer tools (`use`, Suspense, transitions): modern, but remembering answers, retries and cancelling would still be ours to build, and the loading and error flow is harder to follow and explain.
 
+**Update (2026-10-02, as built):**
+
+- Two settings differ from the library's defaults: no automatic retries, and no reload when the window gets focus (design §5.5 says why).
+- The loading function returns checked data or throws one of two errors: `ApiError` (the server answered with an error; it carries the status and the server's code) or `InvalidResponseError` (the answer didn't match the contract).
+- Data that nothing is using is kept for five minutes, the library's default. So coming back from another tab within that time shows the numbers at once.
+- In development the first request appears twice, with the first one cancelled. That is React's strict mode mounting things twice on purpose; the built site sends one.
+- Still open, for the page task: what an offline browser shows. By default the library waits for the connection instead of failing, so the page would show placeholders, not the error.
+
 ## 27. Data is checked at runtime with shared Zod schemas
 
 **Problem:** TypeScript checks our code while we write it, but not what actually arrives over the network. Outside data enters in two places: the server receives the period from the page, and the page receives the data from the server.
@@ -605,7 +621,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 28. The dashboard's state isn't kept in the page address
 
-**Decision:** The address says only which tab you're on (`/` or `/docs`, decision 21). The chosen period and the opened rows aren't in it, so every reload starts fresh: the last 12 months, company open. The demo switches are still remembered by the browser (decision 11).
+**Decision:** The address says only which tab you're on (`/` or `/docs`, decision 21). The chosen period and the opened rows aren't in it, so every reload starts fresh: the last 12 months, company open. The demo switches start off again too (decision 11).
 
 **Why:** Putting the state in the address makes views shareable, and whether they should be shareable is a product question to answer first. Who shares with whom? Should an advisor's link show a colleague's numbers? Until that's settled, we don't build it.
 

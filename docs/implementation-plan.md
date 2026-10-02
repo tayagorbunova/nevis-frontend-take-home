@@ -342,7 +342,7 @@ type TreeTableProps<Row> = {
 - **Found while mocking it up:**
   - An outline on a focused row is hidden under the pinned name cell, in every browser. Draw the focus ring from the pinned cell instead, as wide as the scrolling box.
   - Month headers wrap onto two lines when a column gets too narrow, all of them at once, and a month column is never narrower than 4rem (§5.9).
-- Examples: one live example, `Default`: a small company with twelve months, starting with only the company row open. Clicking shows the rest.
+- Examples: one live example, `Default`: a small company with twelve months, starting with only the company row open. Clicking shows the rest. Plus `Empty` (added later): no rows, showing the optional `emptyMessage`.
 
 **Steps:**
 
@@ -454,16 +454,13 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
   - adds `X-Demo` only when a switch is on
   - throws `ApiError` (`status`, `code?`) on an answer that isn't 2xx
   - throws `InvalidResponseError` when the contract check fails
-- `useClientCounts(period)`: `useQuery` with `queryKey: ['client-counts', period]` and `placeholderData: keepPreviousData`. It reads the demo settings when each request starts.
-- `type DemoSettings = { slow: boolean; fail: boolean }`, with `getDemoSettings()`, `setDemoSettings(next)` and `useDemoSettings()`, which uses `useSyncExternalStore`:
-  - `localStorage` (key `nevis-demo-settings`) is the only store
-  - the parsed value is cached by its raw text, so React gets the same object until something changes
-  - a blocked or malformed store reads as both switches off
-- `DemoSwitches`: a group labelled "Demo settings", with the switches "Slow responses" and "Fail requests", in 12/16 text so it fits on one line under the tabs on a phone (§5.9). A change saves the settings and calls `queryClient.invalidateQueries()`, so the current data reloads at once.
+- `useClientCounts(period, demoSettings)`: `useQuery` with `queryKey: ['client-counts', period, demoSettings]` and `placeholderData: keepPreviousData`. A changed switch is a changed key, so it is a new request at once.
+- `type DemoSettings = { slow: boolean; fail: boolean }` and `DEMO_SETTINGS_OFF`. The settings are plain state in `App` (`useState`), passed to `TopBar` and, in Task 13, to `ClientsPage`. Nothing is saved in the browser. (The first version kept them in `localStorage`; the repo owner dropped that as code the project doesn't need.)
+- `DemoSwitches`: props `settings` and `onChange`. A group labelled "Demo settings", with the switches "Slow responses" and "Fail requests", in 12/16 text so it fits on one line under the tabs on a phone (§5.9).
 
 **Steps:**
 
-- [ ] Build it. Check by hand that both switches work and are remembered across reloads.
+- [ ] Build it. Check by hand that both switches work, and that a reload starts with both off.
 - [ ] Commit `feat(web): load client counts and add the demo switches`.
 
 ### Task 13: The Clients page
@@ -477,8 +474,8 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Produces:**
 
-- `App` holds `period` and `openedRowIds` (§5.3) and passes them to `ClientsPage`.
-- `ClientsPage` props: `{ period: Period; onPeriodChange: (period: Period) => void; openedRowIds: string[] | null; onOpenedRowIdsChange: Dispatch<SetStateAction<string[] | null>> }`. It works out `openedRowIds ?? [tree.id]`, and applies `openRow` / `closeRow` as functional updates, so several changes in one event don't overwrite each other.
+- `App` holds `period`, `openedRowIds` and `demoSettings` (§5.3) and passes them to `ClientsPage`.
+- `ClientsPage` props: `{ period: Period; onPeriodChange: (period: Period) => void; openedRowIds: string[] | null; onOpenedRowIdsChange: Dispatch<SetStateAction<string[] | null>>; demoSettings: DemoSettings }`. It works out `openedRowIds ?? [tree.id]`, and applies `openRow` / `closeRow` as functional updates, so several changes in one event don't overwrite each other.
 - **What the page shows** (§5.5), checked in this order:
   1. an error, even over older numbers; while "Try again" runs, the button is busy
   2. no data yet: placeholders
