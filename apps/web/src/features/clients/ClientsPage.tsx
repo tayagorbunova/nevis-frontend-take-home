@@ -7,13 +7,10 @@ import type { DemoSettings } from "../demo/demoSettings";
 
 import { useClientCounts } from "./api/useClientCounts";
 import styles from "./ClientsPage.module.css";
-import { ClientsChart } from "./components/ClientsChart";
+import { ClientsChartAndTable } from "./components/ClientsChartAndTable";
 import { ClientsPlaceholder } from "./components/ClientsPlaceholder";
-import { ClientsTable } from "./components/ClientsTable";
 import { ErrorCard } from "./components/ErrorCard";
 import { PeriodSelect } from "./components/PeriodSelect";
-import { closeRow, openRow, pickRowForChart } from "./helpers/openedRows";
-import { toClientTree } from "./helpers/toClientTree";
 
 type ClientsPageProps = {
   period: Period;
@@ -44,26 +41,12 @@ export function ClientsPage({
 
     if (clientCounts === undefined) return <ClientsPlaceholder />;
 
-    const tree = toClientTree(clientCounts.company);
-    const openedIds = openedRowIds ?? [tree.id];
-
-    function handleRowOpenChange(id: string, isOpen: boolean) {
-      onOpenedRowIdsChange((current) => {
-        const currentIds = current ?? [tree.id];
-
-        return isOpen ? openRow(currentIds, id) : closeRow(currentIds, id);
-      });
-    }
-
     return (
       <div className={isRefreshing ? styles.refreshingCards : styles.cards}>
-        <ClientsChart rowForChart={pickRowForChart(tree, openedIds)} months={clientCounts.months} />
-
-        <ClientsTable
-          tree={tree}
-          months={clientCounts.months}
-          openedRowIds={openedIds}
-          onRowOpenChange={handleRowOpenChange}
+        <ClientsChartAndTable
+          clientCounts={clientCounts}
+          openedRowIds={openedRowIds}
+          onOpenedRowIdsChange={onOpenedRowIdsChange}
         />
       </div>
     );
