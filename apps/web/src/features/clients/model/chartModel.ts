@@ -1,7 +1,6 @@
 import { CHART_PALETTE, type ChartSeries, type ChartTotal } from "@ui";
 
-import { formatMonth } from "../format";
-
+import { formatMonth } from "./format";
 import type { ChartSubject } from "./openedRows";
 import type { ClientRow } from "./toClientTree";
 

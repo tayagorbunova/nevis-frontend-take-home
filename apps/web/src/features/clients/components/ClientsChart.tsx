@@ -1,8 +1,8 @@
 import { Card, StackedColumnChart } from "@ui";
 
-import { formatCount, formatMonth } from "./format";
-import { chartModel } from "./model/chartModel";
-import type { ChartSubject } from "./model/openedRows";
+import { chartModel } from "../model/chartModel";
+import { formatCount, formatMonth } from "../model/format";
+import type { ChartSubject } from "../model/openedRows";
 
 type ClientsChartProps = {
   subject: ChartSubject;

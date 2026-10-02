@@ -1,8 +1,9 @@
 import { Avatar, Card, TreeTable, type TreeTableColumn } from "@ui";
 
+import { formatCount, formatMonth } from "../model/format";
+import type { ClientRow } from "../model/toClientTree";
+
 import styles from "./ClientsTable.module.css";
-import { formatCount, formatMonth } from "./format";
-import type { ClientRow } from "./model/toClientTree";
 
 type RowNameProps = { row: ClientRow };
 

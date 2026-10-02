@@ -6,14 +6,14 @@ import { Spinner } from "@ui";
 import type { DemoSettings } from "../demo/demoSettings";
 
 import { useClientCounts } from "./api/useClientCounts";
-import { ClientsChart } from "./ClientsChart";
 import styles from "./ClientsPage.module.css";
-import { ClientsPlaceholder } from "./ClientsPlaceholder";
-import { ClientsTable } from "./ClientsTable";
-import { ErrorCard } from "./ErrorCard";
+import { ClientsChart } from "./components/ClientsChart";
+import { ClientsPlaceholder } from "./components/ClientsPlaceholder";
+import { ClientsTable } from "./components/ClientsTable";
+import { ErrorCard } from "./components/ErrorCard";
+import { PeriodSelect } from "./components/PeriodSelect";
 import { chartSubject, closeRow, openRow } from "./model/openedRows";
 import { toClientTree } from "./model/toClientTree";
-import { PeriodSelect } from "./PeriodSelect";
 
 type ClientsPageProps = {
   period: Period;
