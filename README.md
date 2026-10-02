@@ -1,7 +1,5 @@
 # Nevis — Frontend Home Assignment
 
-Implementation of the Nevis Senior Frontend Engineer home assignment: a Clients dashboard with a chart and a table of client counts per month.
-
 **Live:** https://nevis-frontend-home-assignment.vercel.app
 
 ## Run it locally
@@ -17,7 +15,7 @@ Then open http://localhost:5173. The command starts both the page and the API (o
 
 ## Docs
 
-- [Product decisions](docs/product-final.md): what the brief and the design left open, what I decided, and what I'd explore next.
-- [Technical decisions](docs/technical-final.md): the tech stack and the reasons behind the main choices.
+- [Product decisions](docs/product-decisions.md): what the brief and the design left open, what I decided, and what I'd explore next.
+- [Technical decisions](docs/technical-decisions.md): the tech stack and the reasons behind the main choices.
 
 Both are also on the live site, under the **Docs** tab: [product](https://nevis-frontend-home-assignment.vercel.app/docs/product) and [technical](https://nevis-frontend-home-assignment.vercel.app/docs/technical).

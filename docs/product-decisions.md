@@ -30,9 +30,7 @@ There are three sets of mismatches between a row's total and the rows inside it:
 
 These look like data-entry mistakes, but I can't be sure. Even correct totals don't always equal the sum of the rows below them. For example, a client with no assigned advisor might count for the company but not for anyone below it.
 
-I'd expect the channels to add up if every client belongs to exactly one of them, but that definition also needs confirming. I don't know enough about how the numbers are calculated to decide.
-
-So I show the numbers exactly as they were given to me. In a real project I'd ask the product or backend team, and a mistake would be fixed on the server, not patched on the page.
+I don't know enough about how the numbers are calculated to decide, so I show the numbers exactly as they were given to me. In a real project I'd ask the product or backend team, and a mistake would be fixed on the server.
 
 ### Which months do the numbers belong to?
 
@@ -50,7 +48,7 @@ Some things weren't in the Figma file, or the design and the data didn't match.
 
 The design shows a photo next to each advisor, but the data has no images.
 
-I added a photo for Anna Blackwood to show what a row with a photo looks like. Her photo link is the only addition I made to the supplied dataset. The other advisors show their initials in a circle.
+I added a photo for Anna Blackwood to show what a row with a photo looks like. Her photo link is the only addition I made to the supplied dataset. The other advisors just show the initials.
 
 ### Expandable rows
 
@@ -60,7 +58,7 @@ I only show an arrow when a row has something to open. Branch 2, Branch 3 and fo
 
 ### Chart colours
 
-The design has three colours, one per channel. The chart also needs to show three branches and five advisors.
+The design has three colours, one per channel. But the chart also needs to show three branches and five advisors.
 
 I kept the original three colours and added two in the same soft style. The channel view keeps the design's colours, and each of the five advisors gets a different colour.
 
@@ -92,7 +90,7 @@ I interpreted that as keeping the page within the screen while allowing the tabl
 
 The brief and the design always show the same twelve months, with no way to look at a shorter period.
 
-I added a dropdown with four presets: "Last 12 months", "Last 6 months", "Last 3 months" and "Last month". This wasn't requested, but I thought it would be useful for people comparing client numbers over time.
+I added a dropdown with four presets: "Last 12 months", "Last 6 months", "Last 3 months" and "Last month". This wasn't requested, but I thought it would be useful.
 
 The chart and table both show the selected period. "Last" counts back from the latest month in the data, so "Last 3 months" means November 2024 to January 2025 for this dataset.
 
