@@ -14,6 +14,7 @@
     "dev": "concurrently --names api,web --kill-others-on-fail \"npm run dev -w @nevis/api\" \"npm run dev -w @nevis/web\"",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -30,6 +31,7 @@
   },
   "allowScripts": {
     "esbuild": true,
-    "fsevents": true
+    "fsevents": true,
+    "msw": false
   }
 }
