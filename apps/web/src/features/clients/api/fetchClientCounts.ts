@@ -1,5 +1,8 @@
 import {
+  CLIENT_COUNTS_PATH,
+  DEMO_FAIL,
   DEMO_HEADER,
+  DEMO_SLOW,
   clientCountsResponseSchema,
   type ClientCountsResponse,
   type Period,
@@ -16,7 +19,7 @@ export async function fetchClientCounts({
   demo: DemoSettings;
   signal?: AbortSignal;
 }): Promise<ClientCountsResponse> {
-  const response = await fetch(`/api/client-counts?period=${period}`, {
+  const response = await fetch(`${CLIENT_COUNTS_PATH}?period=${period}`, {
     headers: toDemoHeaders(demo),
     signal,
   });
@@ -29,8 +32,8 @@ export async function fetchClientCounts({
 function toDemoHeaders(demo: DemoSettings): Record<string, string> {
   const flags: string[] = [];
 
-  if (demo.slow) flags.push("slow");
-  if (demo.fail) flags.push("fail");
+  if (demo.slow) flags.push(DEMO_SLOW);
+  if (demo.fail) flags.push(DEMO_FAIL);
 
   return flags.length > 0 ? { [DEMO_HEADER]: flags.join(",") } : {};
 }

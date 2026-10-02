@@ -5,7 +5,11 @@ export const periodSchema = z.enum(PERIODS);
 export type Period = z.infer<typeof periodSchema>;
 export const DEFAULT_PERIOD: Period = "last-12-months";
 
+export const CLIENT_COUNTS_PATH = "/api/client-counts";
+
 export const DEMO_HEADER = "X-Demo";
+export const DEMO_SLOW = "slow";
+export const DEMO_FAIL = "fail";
 
 const monthSchema = z.string().check(z.regex(/^\d{4}-(0[1-9]|1[0-2])$/));
 const valuesSchema = z.array(z.int().check(z.nonnegative()));
