@@ -1,7 +1,7 @@
 import { Card } from "../Card/Card";
 import type { Examples, ExamplesMeta } from "../examples";
 
-import { StackedColumnChart, type ChartSeries } from "./StackedColumnChart";
+import { StackedColumnChart, type ChartSeries, type ChartTotal } from "./StackedColumnChart";
 
 export const meta: ExamplesMeta = { title: "StackedColumnChart", wide: true };
 
@@ -41,19 +41,10 @@ const series: ChartSeries[] = [
   },
 ];
 
-function renderLabel(monthIndex: number) {
-  return (
-    <>
-      <div>{monthLabels[monthIndex]}</div>
-
-      {series.map(({ id, name, values }) => (
-        <div key={id}>
-          {name}: {values[monthIndex]}
-        </div>
-      ))}
-    </>
-  );
-}
+const total: ChartTotal = {
+  name: "All clients",
+  values: [220, 234, 250, 261, 278, 299, 314, 305, 323, 340, 355, 372],
+};
 
 function Default() {
   return (
@@ -63,7 +54,8 @@ function Default() {
         description="Made-up client counts by channel, February 2024 to January 2025."
         columnNames={monthLabels}
         series={series}
-        renderLabel={renderLabel}
+        total={total}
+        formatValue={String}
       />
     </Card>
   );
