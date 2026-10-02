@@ -12,6 +12,7 @@ import {
 } from "recharts";
 
 import type { ChartSeries, ChartTotal } from "./chartTypes";
+import { ColumnBand } from "./components/ColumnBand";
 import { ColumnTooltip } from "./components/ColumnTooltip";
 import { Swatch } from "./components/Swatch";
 import { toCssColor } from "./palette";
@@ -27,6 +28,8 @@ type StackedColumnChartProps = {
 };
 
 const MIN_SPACE_PER_COLUMN_FOR_HORIZONTAL_NAMES = 64;
+const MAX_COLUMN_WIDTH = 88;
+const SPACE_BETWEEN_BAND_AND_TOOLTIP = 8;
 
 const HORIZONTAL_COLUMN_NAMES = {
   height: 30,
@@ -71,6 +74,9 @@ export function StackedColumnChart({
   const spacePerColumn = plotWidth / columnNames.length;
   const isNarrow = spacePerColumn < MIN_SPACE_PER_COLUMN_FOR_HORIZONTAL_NAMES;
 
+  const spaceBetweenColumns = isNarrow ? 4 : 12;
+  const bandWidth = Math.min(spacePerColumn, MAX_COLUMN_WIDTH + spaceBetweenColumns);
+
   const columns = columnNames.map((_, columnIndex) =>
     Object.fromEntries(series.map(({ id, values }) => [id, values[columnIndex]])),
   );
@@ -87,8 +93,8 @@ export function StackedColumnChart({
         aria-labelledby={captionId}
         desc={description}
         margin={{ top: 8, right: 0, bottom: 0, left: 0 }}
-        barCategoryGap={isNarrow ? 4 : 12}
-        maxBarSize={88}
+        barCategoryGap={spaceBetweenColumns}
+        maxBarSize={MAX_COLUMN_WIDTH}
       >
         <PlotWidthReporter onChange={setPlotWidth} />
 
@@ -114,8 +120,8 @@ export function StackedColumnChart({
 
         <Tooltip
           isAnimationActive={false}
-          cursor={{ fill: "var(--color-row-hover)" }}
-          offset={spacePerColumn / 2 + 8}
+          cursor={<ColumnBand maxWidth={bandWidth} />}
+          offset={bandWidth / 2 + SPACE_BETWEEN_BAND_AND_TOOLTIP}
           position={{ y: 40 }}
           content={
             <ColumnTooltip
