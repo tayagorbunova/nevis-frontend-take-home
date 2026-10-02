@@ -342,7 +342,7 @@ type TreeTableProps<Row> = {
 - **Found while mocking it up:**
   - An outline on a focused row is hidden under the pinned name cell, in every browser. Draw the focus ring from the pinned cell instead, as wide as the scrolling box.
   - Month headers wrap onto two lines when a column gets too narrow, all of them at once, and a month column is never narrower than 4rem (§5.9).
-- Examples: one live example, `Default`: a small company with twelve months, starting with only the company row open. Clicking shows the rest.
+- Examples: one live example, `Default`: a small company with twelve months, starting with only the company row open. Clicking shows the rest. Plus `Empty` (added later): no rows, showing the optional `emptyMessage`.
 
 **Steps:**
 
@@ -356,7 +356,9 @@ type TreeTableProps<Row> = {
 **Produces:**
 
 ```ts
-type ChartColor = "lavender" | "peach" | "maroon" | "sage" | "mustard"; // the chart turns the name into its CSS variable
+const CHART_PALETTE = ["lavender", "peach", "maroon", "sage", "mustard"] as const; // the palette, in order; lives in palette.ts
+
+type ChartColor = (typeof CHART_PALETTE)[number] | "grey"; // the chart turns the name into its CSS variable
 
 type ChartSeries = { id: string; name: string; color: ChartColor; values: readonly number[] };
 
@@ -365,7 +367,7 @@ type StackedColumnChartProps = {
   description: string; // for screen readers (the SVG's <desc>)
   columnNames: readonly string[]; // one per column, e.g. "Feb 2024"
   series: readonly ChartSeries[]; // bottom to top
-  renderLabel: (columnIndex: number) => ReactNode;
+  renderLabel: (columnIndex: number) => ReactNode; // replaced in Task 13 by `total?` and `formatValue`: the chart draws its own label (D29)
 };
 ```
 
@@ -379,12 +381,12 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
   - `maxBarSize` stops the columns growing past the design's width
   - the y axis has 5 "nice" ticks, labels 12px at 60% ink, and no axis lines
   - dotted gridlines: `strokeDasharray="1 6"` with the gridline token
-- **The label:** Recharts' `Tooltip` renders `renderLabel(index)` inside the approved card.
+- **The label:** Recharts' `Tooltip` renders `renderLabel(index)` inside the approved card. (Since Task 13 the chart draws the lines itself, from `series`, `total` and `formatValue`.)
 - **Escape:** nothing of ours. Recharts 3.10.1 hides the label on Escape by itself, until the month changes or the pointer moves.
 - **Announcements:** Recharts announces only its default label. So an always-present, visually hidden `role="status"` region holds the active month's label. Take the active month from Recharts 3's hooks (e.g. `useActiveTooltipLabel`) or from the tooltip content, whichever stays simpler.
 - **Colours:** bars use `var(--color-chart-n)`, declared in the chart's own CSS file. Checked as an SVG fill in Chrome and Firefox; Safari wasn't run.
 - **Narrow screens:** one rule from the chart's own width: when a month has less than 64px, the month labels are tilted at 60° in 11px text and the columns sit 0.5rem apart; otherwise horizontal labels and the design's 24px. Checked at 320px and 375px. (The first version shortened the labels instead, through a `shortMonthLabels` prop; the repo owner preferred the full labels, tilted.)
-- **The legend** is an HTML list below the chart, hidden when there's only one series, since the title already names it.
+- **The legend** is an HTML list below the chart. It is always shown, also for a single series, so the chart keeps its height. (At first it was hidden for one series; Task 13 changed that, D19.)
 - **Examples:** one live example, `Default` (three series, twelve months). One series, five series and a narrow box were checked with temporary examples and removed.
 
 **Steps:**
@@ -421,15 +423,14 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Produces:**
 
-- `type ChartModel = { caption: string; description: string; series: ChartSeries[]; totals: number[] }`
+- `type ChartModel = { caption: string; description: string; series: ChartSeries[]; totals: number[] }` (since Task 13: `total?: ChartTotal`, the subject's name and values, in place of `totals`)
 - `chartModel(subject: ChartSubject, months: readonly string[]): ChartModel` (§5.4):
   - `caption`: "<name> by <level of the children>", or just the name when not split
-  - `series`: coloured in D17's order, `lavender`, `peach`, `maroon`, `sage`, `mustard` (the chart's `ChartColor` names; the type allows only these five). The data never has more than five parts. If a sixth has to be handled, add a grey to the chart's palette and to `ChartColor` first (D17)
+  - `series`: coloured in D17's order by position, from the chart's own `CHART_PALETTE` list (imported from `@ui`, so the colour names are written in one place only). A sixth or later part is `grey` (D17, §5.4): this task adds `grey` (`#c7c7c6`, §5.9) to the chart's palette and to `ChartColor`. A chart that isn't split has one series, the subject itself, in the first colour.
   - `totals`: the subject's own values, never summed
-  - `description`, e.g. "Company by branch, February 2024 to January 2025. Exact numbers are in the table below." With a single month, there's no range.
+  - `description`, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below." With a single month, there's no range.
 - Formatting, with `Intl`, `en-US` and `timeZone: 'UTC'`:
   - `formatMonth('2024-02')` → "Feb 2024"
-  - `formatMonthLong('2024-02')` → "February 2024"
   - `formatCount(value: number | undefined)` → "1,234", or "—" when the value is missing
 
 **Steps:**
@@ -448,21 +449,18 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Produces:**
 
-- `createQueryClient()`, with `retry: false` and `refetchOnWindowFocus: false` (§5.5).
+- `createQueryClient()`, with `retry: false` and `refetchOnWindowFocus: false` (§5.5). Task 13 adds `refetchOnMount: false` and `networkMode: "always"`.
 - `fetchClientCounts({ period, demo, signal }: { period: Period; demo: DemoSettings; signal?: AbortSignal }): Promise<ClientCountsResponse>`:
   - adds `X-Demo` only when a switch is on
   - throws `ApiError` (`status`, `code?`) on an answer that isn't 2xx
   - throws `InvalidResponseError` when the contract check fails
-- `useClientCounts(period)`: `useQuery` with `queryKey: ['client-counts', period]` and `placeholderData: keepPreviousData`. It reads the demo settings when each request starts.
-- `type DemoSettings = { slow: boolean; fail: boolean }`, with `getDemoSettings()`, `setDemoSettings(next)` and `useDemoSettings()`, which uses `useSyncExternalStore`:
-  - `localStorage` (key `nevis-demo-settings`) is the only store
-  - the parsed value is cached by its raw text, so React gets the same object until something changes
-  - a blocked or malformed store reads as both switches off
-- `DemoSwitches`: a group labelled "Demo settings", with the switches "Slow responses" and "Fail requests", in 12/16 text so it fits on one line under the tabs on a phone (§5.9). A change saves the settings and calls `queryClient.invalidateQueries()`, so the current data reloads at once.
+- `useClientCounts(period, demoSettings)`: `useQuery` with `queryKey: ['client-counts', period, demoSettings]` and `placeholderData: keepPreviousData`. A changed switch is a changed key, so it is a new request at once. (Task 13 changed this: the settings left the key, and a switch no longer sends a request.)
+- `type DemoSettings = { slow: boolean; fail: boolean }` and `DEMO_SETTINGS_OFF`. The settings are plain state in `App` (`useState`), passed to `TopBar` and, in Task 13, to `ClientsPage`. Nothing is saved in the browser. (The first version kept them in `localStorage`; the repo owner dropped that as code the project doesn't need.)
+- `DemoSwitches`: props `settings` and `onChange`. A group labelled "Demo settings", with the switches "Slow responses" and "Fail requests", in 12/16 text so it fits on one line under the tabs on a phone (§5.9). (Task 13 renames it `DemoControls` and adds the "Reload" button.)
 
 **Steps:**
 
-- [ ] Build it. Check by hand that both switches work and are remembered across reloads.
+- [ ] Build it. Check by hand that both switches work, and that a reload starts with both off.
 - [ ] Commit `feat(web): load client counts and add the demo switches`.
 
 ### Task 13: The Clients page
@@ -471,20 +469,26 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 
 **Files:**
 
-- `apps/web/src/features/clients/ClientsPage.tsx` and `.module.css`, `ClientsTable.tsx`, `ClientsChart.tsx`, `ChartLabel.tsx`, `PeriodSelect.tsx`
+- `apps/web/src/features/clients/ClientsPage.tsx` and `.module.css`, `ClientsPlaceholder.tsx` and `.module.css` (the first-load placeholders), `ErrorCard.tsx` and `.module.css` (the error message with "Try again"), `ClientsTable.tsx` and `.module.css`, `ClientsChart.tsx`, `PeriodSelect.tsx`
 - `src/app/App.tsx`: now holds the page state
+- `src/app/queryClient.ts`: `networkMode: "always"`, so an offline request fails and shows the error, and `refetchOnMount: false`, so coming back from another tab reloads nothing (§5.5)
+- `src/ui/StackedColumnChart/`: the chart draws its own label and takes `total?` and `formatValue` in place of `renderLabel` (D29); it gets a `key` made from its column names; the legend is always shown, also for one series (D19). `src/ui/index.ts` exports the `ChartTotal` type. `features/clients/model/chartModel.ts` returns `total` in place of `totals`
+- `src/features/demo/`: `DemoSwitches` becomes `DemoControls` and gets a "Reload" button; `src/app/TopBar.tsx` and `.module.css` (the two-line breakpoint moves to 47rem); `features/clients/api/useClientCounts.ts` (the demo settings leave the cache key)
 
 **Produces:**
 
-- `App` holds `period` and `openedRowIds` (§5.3) and passes them to `ClientsPage`.
-- `ClientsPage` props: `{ period: Period; onPeriodChange: (period: Period) => void; openedRowIds: string[] | null; onOpenedRowIdsChange: Dispatch<SetStateAction<string[] | null>> }`. It works out `openedRowIds ?? [tree.id]`, and applies `openRow` / `closeRow` as functional updates, so several changes in one event don't overwrite each other.
+- `App` holds `period`, `openedRowIds` and `demoSettings` (§5.3) and passes them to `ClientsPage`.
+- `ClientsPage` props: `{ period: Period; onPeriodChange: (period: Period) => void; openedRowIds: string[] | null; onOpenedRowIdsChange: Dispatch<SetStateAction<string[] | null>>; demoSettings: DemoSettings }`. It works out `openedRowIds ?? [tree.id]`, and applies `openRow` / `closeRow` as functional updates, so several changes in one event don't overwrite each other.
 - **What the page shows** (§5.5), checked in this order:
-  1. an error, even over older numbers; while "Try again" runs, the button is busy
+  1. an error, even over older numbers; while a request runs, the message stays and the button is busy
   2. no data yet: placeholders
   3. a request running while numbers are on screen: the numbers faded, and the spinner by the dropdown
   4. otherwise: the chart and the table
+- **One rule while a request runs:** the page keeps what was on screen (§5.5). For it, `useClientCounts` remembers one fact, `hasLastRequestFailed`, set while rendering and only when no request is running, and returns it; `ClientsPage` decides from that fact alone. The library alone can't tell: it clears a failure when a request without numbers starts again.
+- **The demo controls** (D11): a switch only says how the next requests behave and sends nothing itself. "Reload" calls `queryClient.resetQueries()`: every loaded answer is forgotten and the current one is asked for again, so the page shows its first-load placeholders (two seconds with "Slow responses" on).
+- The fade to 60% is a 150ms opacity transition, off under reduced motion. The first-load placeholders sit exactly where the real cards and rows will be, at every width.
 - `ClientsTable`: the columns from §5.7, with `RowName` (the avatar for advisors, then the name). Below 40rem, `RowName` gives channel names 1.25rem (the avatar's width) of extra indent in its own CSS, or they start left of the advisor's name. `TreeTable` can't do this: it only knows a row's level, not that advisors have avatars.
-- `ChartLabel` for a month: "May 2024", then the subject's total from `totals` (never summed), then each part with its colour square and number (§5.7).
+- **The chart's label** for a month: "May 2024", then the subject's name with its total (the model's `total`, never summed), then each part with its colour square, name and number. Every number is in one right-aligned column. The chart draws it; `ClientsChart` passes `series`, `total` and `formatValue={formatCount}` (§5.6).
 - `PeriodSelect`: the `PERIODS`, labelled "Last 12 months", "Last 6 months", "Last 3 months" and "Last month".
 
 **Steps:**
@@ -557,7 +561,7 @@ The last stage from §10:
 | §5.6 Our components | 6 (NavTabs), 7, 8, 9 |
 | §5.3 Page state, §5.4 From answer to screen | 10, 11, 13 |
 | §5.5 Loading data | 12, 13 |
-| §5.7 Feature components | 6 (Gallery), 12 (DemoSwitches), 13, 14 (Docs) |
+| §5.7 Feature components | 6 (Gallery), 12 and 13 (DemoControls), 13, 14 (Docs) |
 | §6 Accessibility | 6–9, 13, 15 |
 | §7 Page weight | 14 (build check), 16 (README) |
 | §8 Testing | 15 |

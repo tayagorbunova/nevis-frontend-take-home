@@ -1,7 +1,40 @@
 .topBar {
+  --bar-height: 3rem;
+
   display: flex;
-  min-height: 3rem;
+  justify-content: space-between;
+  gap: var(--space-24);
+  min-height: var(--bar-height);
   padding: 0 var(--space-16);
   background: var(--color-card);
   border-bottom: var(--border);
+}
+
+.tabs {
+  display: flex;
+}
+
+.demo {
+  display: flex;
+  align-items: center;
+}
+
+@media (width < 47rem) {
+  .topBar {
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .tabs {
+    min-height: var(--bar-height);
+    padding: 0 var(--space-16);
+    border-bottom: var(--border);
+  }
+
+  .demo {
+    padding: var(--space-8) var(--space-16);
+    border-bottom: var(--border);
+  }
 }

@@ -1,7 +1,9 @@
-import { lazy, Suspense } from "react";
+import { DEFAULT_PERIOD } from "@nevis/contract";
+import { lazy, Suspense, useState } from "react";
 import { Redirect, Route, Switch } from "wouter";
 
 import { ClientsPage } from "../features/clients/ClientsPage";
+import { DEMO_SETTINGS_OFF } from "../features/demo/demoSettings";
 
 import styles from "./App.module.css";
 import { TopBar } from "./TopBar";
@@ -15,15 +17,25 @@ const DocsPage = lazy(() =>
 );
 
 export function App() {
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
+  const [openedRowIds, setOpenedRowIds] = useState<string[] | null>(null);
+  const [demoSettings, setDemoSettings] = useState(DEMO_SETTINGS_OFF);
+
   return (
     <>
-      <TopBar />
+      <TopBar demoSettings={demoSettings} onDemoSettingsChange={setDemoSettings} />
 
       <main className={styles.page}>
         <Suspense fallback={null}>
           <Switch>
             <Route path="/">
-              <ClientsPage />
+              <ClientsPage
+                period={period}
+                onPeriodChange={setPeriod}
+                openedRowIds={openedRowIds}
+                onOpenedRowIdsChange={setOpenedRowIds}
+                demoSettings={demoSettings}
+              />
             </Route>
 
             <Route path="/components">

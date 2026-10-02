@@ -9,7 +9,7 @@ The blueprint for building the app: **what** gets built and **how**. The reasons
 - **Implementation tab** (the dashboard itself): the stacked column chart and the table whose rows open and close, a period dropdown, and the loading, refreshing and error states.
 - **Components tab:** a gallery of our own UI components in their main states (D37).
 - **Docs tab:** the decisions, rendered from the repo's Markdown (D20).
-- **Top bar:** the tabs, plus the demo switches on the Implementation tab (D11, D21).
+- **Top bar:** the tabs, plus the demo settings (two switches and a "Reload" button) on the Implementation tab (D11, D21).
 - **Node.js API:** serves the brief's data (D7, D24, D35).
 - Hosting on Vercel (D12), tests (D36, provisional), and a README.
 
@@ -83,7 +83,7 @@ ApiCompany  = { id: string; name: string; values: number[]; branches?: ApiBranch
 ClientCountsResponse = { months: string[]; company: ApiCompany }   // months as "YYYY-MM"
 ApiErrorBody = { error: { code: 'invalid_period' | 'internal_error'; message: string } }
 
-export const DEMO_HEADER = 'X-Demo';   // values: "slow", "fail", or "slow, fail"
+export const DEMO_HEADER = 'X-Demo';   // values: "slow", "fail", or "slow,fail"
 ```
 
 The rules the schemas enforce:
@@ -127,9 +127,9 @@ src/
 ├─ ui/                 our design system (§5.6); each component has .tsx, .module.css and .examples.tsx;
 │                      index.ts lists what the rest of the app imports
 ├─ features/
-│   ├─ clients/        ClientsPage, ClientsTable, ClientsChart, PeriodSelect,
+│   ├─ clients/        ClientsPage, ClientsPlaceholder, ErrorCard, ClientsTable, ClientsChart, PeriodSelect,
 │   │                  api/ (fetchClientCounts, useClientCounts), model/ (the pure rules)
-│   ├─ demo/           DemoSwitches, the saved demo settings
+│   ├─ demo/           DemoControls (the two switches and Reload), the demo settings' type
 │   ├─ gallery/        GalleryPage (loads on demand)
 │   └─ docs/           DocsPage (loads on demand)
 └─ styles/             tokens.css, global.css
@@ -146,27 +146,28 @@ public/avatars/anna-blackwood.jpg   (80×80, from the design, D16)
   - `/docs` shows the Docs, loaded on demand
   - any other address redirects to `/`
 - **`NavTabs` uses wouter's own `Link`,** which handles Cmd/Ctrl-click and accepts `aria-current`. React Aria's `Link` doesn't accept `aria-current` (checked in its types), and no other React Aria links are used, so React Aria's router integration isn't needed.
-- **The top bar** holds `NavTabs` (Implementation, Components, Docs) on the left and `DemoSwitches` on the right, shown only on the Implementation tab. On narrow screens it wraps onto two lines.
+- **The top bar** holds `NavTabs` (Implementation, Components, Docs) on the left and `DemoControls` on the right, shown only on the Implementation tab. On narrow screens it wraps onto two lines.
 - **Browser tab titles:** "Clients · Nevis home task", "Components · Nevis home task" and "Docs · Nevis home task".
 - **Favicon:** our own small SVG icon: three rising columns, each stacked in the first three chart colours (D39).
 
 ### 5.3 Page state (D28, section 1 of the design review)
 
-`App` holds two pieces of state and passes them down as props. No context and no state library.
+`App` holds three pieces of state and passes them down as props. No context and no state library.
 
 - **`period: Period`**, starting at `DEFAULT_PERIOD`.
 - **`openedRowIds: string[] | null`**, the opened rows in the order they were opened.
   - `null` means "the default": only the company row is open (D2).
   - The company's id comes from the data, so the effective list is `openedRowIds ?? [tree.id]`.
+- **`demoSettings: DemoSettings`**, the two demo switches, both off at the start (D11).
 
-Everything else is worked out from these two values, never stored. The data itself lives in TanStack Query's cache, above the tabs, so returning from Docs shows it instantly. The demo settings live in `localStorage` (§5.5).
+Everything else is worked out from these values and the server's answer, never stored. The one exception: the data hook, `useClientCounts`, remembers whether the last finished request failed (§5.5 says why). Nothing is saved in the browser, so a reload starts fresh. The data itself lives in TanStack Query's cache, above the tabs, so returning from Docs shows it instantly and without a new request (for five minutes, the library's default for data nothing is using).
 
 **The opened-rows rules** (`features/clients/model/openedRows.ts`, pure):
 
 - **Open a row:** move its id to the end of the list, so it's the most recent.
 - **Close a row:** remove its id. Rows inside it stay in the list, so reopening the parent shows them still open (React Aria keeps them open while hidden).
 - **What the chart shows** (`chartSubject(tree, openedIds)`):
-  - It shows the **last id in the list that is visible**, meaning all its ancestors are in the list too, split into its children.
+  - It shows the **last id in the list that is visible and has something inside**, split into its children. Visible means all its ancestors are in the list too.
   - If no such row exists (the company is closed), it shows the **company's total as one colour** (D19).
   - Ids that aren't in the current tree are ignored.
 - **Examples:**
@@ -186,8 +187,8 @@ Everything else is worked out from these two values, never stored. The data itse
 - **The chart model** (`model/chartModel.ts`, pure) takes the chart's subject and the months, and produces:
   - **`caption`**: "Company by branch", "Branch 1 by advisor" or "Anna Blackwood by channel", named after the children's level (D19). It's just "Company" when the company is closed.
   - **`series`**: one entry per child, `{ id, name, color, values }`, coloured in the palette's order (D17), with a sixth or later child in a neutral grey. A single-colour chart has one series: the subject itself.
-  - **`totals`**: the subject's own `values` from the server. The label's total always comes from here and is never summed (D4, D18).
-  - **`description`**: for screen readers, e.g. "Company by branch, February 2024 to January 2025; exact numbers are in the table below."
+  - **`total`**: the subject's name and its own `values` from the server, `{ name, values }`. The label's total line always comes from here and is never summed (D4, D18). A single-colour chart has no `total`: its one series already is the subject.
+  - **`description`**: for screen readers, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below." With a single month there is no range.
 
 ### 5.5 Loading data (D8–D11, D26, D27)
 
@@ -195,20 +196,33 @@ Everything else is worked out from these two values, never stored. The data itse
   - Requests `/api/client-counts?period=…`, adding `X-Demo` only when a switch is on.
   - A non-2xx answer throws `ApiError { status, code }`, reading the error shape when it's there.
   - A 2xx answer is checked with the contract; a failed check throws `InvalidResponseError`.
-- **`useClientCounts(period)`:** `useQuery` with these settings:
+- **`useClientCounts(period, demoSettings)`:** `useQuery` with these settings:
   - `queryKey: ['client-counts', period]`
   - `placeholderData: keepPreviousData`, so the old numbers stay while a new period loads
+  - the demo settings are not part of the key: they don't change which numbers these are, only how the next request behaves. The request reads them when it is made
+  - it returns what the page needs: `data`, `isFetching`, `refetch` and `hasLastRequestFailed` (below)
+- **The cache** (`createQueryClient()`) changes four of the library's defaults for every request. Together they mean a request is sent only when the page needs numbers it doesn't have or the user asks for them: the first load, a period, "Try again" or "Reload".
   - `retry: false`, because "Try again" is manual and automatic retries would hide the demo's failure for several seconds
   - `refetchOnWindowFocus: false`, so switching windows doesn't quietly trigger reloads
-- **Demo settings:** stored as `{ slow: boolean, fail: boolean }` under one `localStorage` key. Reading and writing are wrapped so a blocked `localStorage` just means "both off". Changing a switch reloads the current data straight away, so its effect is visible without extra clicks.
+  - `refetchOnMount: false`, so coming back from another tab doesn't either. The page is rebuilt on every return to its tab, and by default that reloads the numbers already on screen: the cards showed at 60% and faded back up on every return (D26)
+  - `networkMode: "always"`, so a request made while the browser is offline is tried, fails, and shows the error with "Try again". By default the library parks the request until the connection is back and reports nothing, so the page would keep the old numbers under the new period's name, with no spinner and no error (D26)
+- **Demo settings:** `{ slow: boolean, fail: boolean }`, plain state in `App`, handed to the top bar's switches and to `useClientCounts`. A switch only says how the next requests behave; pressing it sends nothing. They aren't saved: a reload of the browser starts with both off.
+- **The "Reload" button** next to the switches forgets every loaded answer and asks for the current one again (`queryClient.resetQueries()`). The page then has no numbers, so it shows the first-load placeholders: for two seconds with "Slow responses" on, and ending in the error message with "Fail requests" on. The period and the opened rows are kept. While the error message is on screen it stays, busy, like "Try again" (the rule below).
 - **What the dashboard shows:**
 
 | State | What's on screen |
 |---|---|
 | First load (no data yet) | The real title and dropdown, and placeholders shaped like the chart card and the table card |
-| Error (any kind, even if older numbers exist) | "Couldn't load clients" and a "Try again" button (`refetch`), in place of the chart and table. While the retry runs, the button shows it's busy. |
-| Refreshing: a request runs while numbers are on screen (a new period, a demo switch, a return to a period already seen) | The numbers on screen faded, and a small spinner next to the dropdown, which already shows the new choice |
+| Error (any kind, even if older numbers exist) | "Couldn't load clients" and a "Try again" button (`refetch`), in place of the chart and table. While a request runs, the message stays and the button shows it's busy. |
+| Refreshing: a request runs while numbers are on screen (a new period, a return to a period already seen) | The numbers on screen faded, and a small spinner next to the dropdown, which already shows the new choice |
 | Loaded | The chart and table |
+
+- **One rule while a request runs: the page keeps what was on screen,** whatever started the request ("Try again" or a new period). Numbers stay, faded, with the spinner. The error message stays too, with its button busy. So after a failure, another period's numbers never come back under the new period's name (D10). "Reload" is the one action that drops the numbers on purpose.
+- **The one fact that is remembered** (`hasLastRequestFailed`, kept inside `useClientCounts`, next to the library it makes up for):
+  - *Why it's needed:* TanStack Query forgets a failure the moment the next request starts, when that request has no numbers of its own: its `error` goes back to `null`. Judged by the library's `error` alone, pressing "Try again" would replace the message with placeholders (or with an older period's numbers, faded), and the busy button would never be seen.
+  - *When it changes:* only while no request is running. At that moment the library's `error` is the truth, and the hook copies it. While a request runs, the hook leaves the fact alone, which is what keeps the message on screen.
+  - *How it's used:* the page decides from this fact alone. True means the error message, whatever the library's `error` says at that moment.
+  - *Why it's set while rendering, not in an effect:* an effect runs after the page has been drawn, so the wrong picture would be on screen for one frame first. Setting state while rendering is React's documented way to adjust state when something changes: React throws the half-made render away and renders again with the new value, before anything is drawn. The lint rules also forbid setting state in an effect.
 
 ### 5.6 Our components (`src/ui/`, D13, D29, D38)
 
@@ -216,8 +230,8 @@ Each has its examples file for the Components tab.
 
 | Component | Style | API (sketch) | Notes |
 |---|---|---|---|
-| `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]` | See below |
-| `StackedColumnChart` | props + render function | `title`, `description`, `columnNames`, `series`, `renderLabel(columnIndex)` | See below; a `<figure>` whose caption is the title |
+| `TreeTable<Row>` | props + render functions | `label`, `rows`, `getRowId`, `getChildren`, `openRowIds: ReadonlySet<string>`, `onRowOpenChange(id, isOpen)`, `columns: { id, header, hideHeader?, isRowHeader?, align?, cell(row) }[]`, `emptyMessage?` | See below |
+| `StackedColumnChart` | plain props | `title`, `description`, `columnNames`, `series`, `total?: { name, values }`, `formatValue(value)` | See below; a `<figure>` whose caption is the title |
 | `NavTabs` | compound | `<NavTabs label>` with `<NavTabs.Link href>` children | `<nav>` built on wouter's `Link` and current location; the current tab gets `aria-current="page"`; styled per D39 |
 | `Select` | plain props | `label`, `hideLabel?`, `items: { id, label }[]`, `value`, `onChange`, `isDisabled?` | React Aria `Select` with its current `value`/`onChange` API (`selectedKey` is deprecated in 1.21); with `hideLabel` the label isn't drawn and becomes the control's `aria-label` |
 | `Switch` | plain props | `children` (label), `isSelected`, `onChange`, `isDisabled?` | React Aria's `SwitchField` and `SwitchButton`, the pair its docs show (the library's older single `Switch` export is deprecated in 1.21) |
@@ -246,6 +260,7 @@ Each has its examples file for the Components tab.
 - **The chevron** is the design's path `M6.5 4.5L10 8L6.5 11.5` (16px, 1.5px stroke, square caps), pointing right and turned 90° when open. It's a decorative icon, hidden from screen readers; the row itself is the control (D13).
 - **The gap between columns** (16px in Figma) is 8px on each side of every cell, so the outline of a focused cell doesn't touch its number. Names and numbers sit exactly where Figma puts them.
 - **Numbers** in the columns after the name use tabular figures, so digits line up from row to row. Names keep the font's normal figures.
+- **With no rows,** the table shows its header and one row with `emptyMessage` in 60% ink, centred in the visible part of the table even when it is scrolled sideways. The dashboard's table always has the company row, so only the Components tab shows this state.
 
 **`StackedColumnChart`** wraps Recharts (D29):
 
@@ -256,29 +271,39 @@ Each has its examples file for the Components tab.
   - five dotted gridlines (1px dash, 6px gap, ink at 16%) at "nice" round values
   - y labels 12px at 60% ink, 26px wide
   - x labels 12px, centred
-  - the legend centred below: 8×8 squares with 2px corners
+  - the legend centred below: 8×8 squares with 2px corners. It is always shown, also for a single series, so the chart keeps its height (D19)
   - columns stop growing at the design's width on very wide screens
 - **Keyboard:** Recharts' built-in layer gives one Tab stop, ← / → between months, and Escape to hide the label. We add no keyboard code of our own (D29).
-- **The label:** the chart draws the white card, and the feature supplies what's inside through `renderLabel`. The same content is also placed in an always-present, visually hidden region marked `role="status"`, so screen readers hear the active month. Recharts adds announcements only to its default label, so we add them ourselves (D29).
+- **The label** is drawn by the chart itself, from its data:
+  - the column's name ("May 2024"), then the total line if a `total` was given (its name and its number), then one line per series: its colour square, its name and its number
+  - names on the left and every number in one right-aligned column, so a total sits right above its parts (Company 301 over 156, 87 and 36) and a mismatch is easy to see
+  - the chart never adds anything up: the total is the caller's own number (D4). With no `total`, the label is the column's name and the series
+  - numbers are written by the caller's `formatValue`, because the chart can't know how the app writes numbers ("1,234", and a dash for a missing one)
+  - the same lines are also placed in an always-present, visually hidden region marked `role="status"`, so screen readers hear the active column. Recharts adds announcements only to its default label, so we add them ourselves (D29)
 - **The chart's name** for screen readers is its visible caption (`aria-labelledby`), and `description` becomes the picture's `<desc>`. Recharts' own `title` is not used: browsers show it as their own tooltip on hover.
+- **A changed list of column names builds the chart fresh** (a `key` made from the names). Recharts keeps the hovered position in pixels from the old columns, so after a period change the band behind the active column was drawn in the old place until the pointer moved (D29).
 - **The narrow look** depends on the chart's own width, not the page's: when a column has less than 64px of space, the chart tilts the names under the columns (the same "Feb 2024", at 60° and a little smaller, 11px) and puts 0.5rem between columns. Every column keeps its name (D15). The chart itself knows nothing about months: it gets one name per column. With twelve months that starts below a window of about 870px.
 
 ### 5.7 Feature components
 
 - **`ClientsPage`:**
-  - the title row: an `h1` "Clients", with `PeriodSelect` and the `Spinner` (while a new period loads) on the right, moving under the title on narrow screens (D15)
+  - the title row: an `h1` "Clients", with `PeriodSelect` and the `Spinner` (while refreshing) on the right, moving under the title on narrow screens (D15)
   - then the states from §5.5
-  - it wires the page state to `ClientsChart` and `ClientsTable`
+  - it turns the answer into the tree, works out the opened rows and the chart's subject, and hands them to `ClientsChart` and `ClientsTable`
+- **`ClientsPlaceholder`:** the first-load picture: a chart card and a table card holding grey blocks, with its own CSS file for their sizes (§5.9).
+- **`ErrorCard`:** the card with "Couldn't load clients" and the "Try again" button. Props: `isBusy` and `onRetry`.
 - **`ClientsTable`:**
   - `TreeTable` with the label "Client counts per month"
   - a name column (an `Avatar` for advisors, then the name; the header is visually hidden)
   - one column per month ("Feb 2024")
   - numbers formatted with `Intl.NumberFormat('en-US')`; `TreeTable` itself sets tabular figures, so the digits line up
+  - below 40rem, channel names get 1.25rem (the avatar's width) of extra indent, so they still start under the advisor's name. `TreeTable` can't do this: it knows a row's level, not that advisors have avatars
 - **`ClientsChart`:**
   - a padded `Card` holding `StackedColumnChart`, whose title is the caption (top-left, 14px, D19)
-  - the label reads: the month ("May 2024"), then the subject's total from the server, then each part with its colour square and number, e.g. "May 2024 · Company: 301 · Branch 1: 156 · Branch 2: 87 · Branch 3: 36"
+  - a chart whose months are the server's list, each through `formatMonth`
+  - it passes data only: the series, the subject's own total (when the chart is split) and `formatCount` for the numbers. The chart draws the label (§5.6, D18)
 - **`PeriodSelect`:** the `PERIODS` from the contract, with the labels "Last 12 months", "Last 6 months", "Last 3 months" and "Last month" (D9).
-- **`DemoSwitches`:** a group labelled "Demo settings" with the switches "Slow responses" and "Fail requests" (D11).
+- **`DemoControls`:** a group labelled "Demo settings" with the switches "Slow responses" and "Fail requests" and the "Reload" button (D11).
 - **`DocsPage`:**
   - loads `react-markdown` and `remark-gfm` on demand and renders `docs/decisions/product.md` and `docs/decisions/technical.md` as Markdown files imported at build time (D20, D31)
   - until the final docs stage creates those two files, it renders `docs/decisions.md`
@@ -297,15 +322,15 @@ Each has its examples file for the Components tab.
   - `--color-row-hover`: `#f6f6f6`, Surface/Secondary. That's the ink at 4% on white, written as an opaque colour so the pinned table column covers what scrolls under it
   - `--color-page`: #F7F5ED, Background/Primary
   - `--color-card`: #FFFFFF, Background/Secondary
-  - the chart's five colours (D17): `--color-chart-lavender`, `-peach`, `-maroon`, `-sage` and `-mustard`, declared in the chart's own CSS file while only the chart uses them. A neutral grey for a sixth part is added when something needs it
+  - the chart's five colours (D17): `--color-chart-lavender`, `-peach`, `-maroon`, `-sage` and `-mustard`, declared in the chart's own CSS file while only the chart uses them. A neutral grey, `--color-chart-grey`, is there for a sixth or later part
 - **Type:** Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25).
 - **Spacing** in rem, for example 0.5, 1, 1.125, 1.5 and 1.75rem (8, 16, 18, 24 and 28px).
-- **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), and `--duration-fast` (150ms), shared by the switch's thumb and the table's arrow.
+- **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), and `--duration-fast` (150ms), shared by the switch's thumb, the table's arrow and the dashboard's fade.
 - **Figma's px values become rem** (px ÷ 16), so the layout grows with the reader's text size. For example, the 264px name column becomes 16.5rem, and the 56px row becomes a 3.5rem *minimum* height. Borders, outlines and dividers stay in px.
 
 **Rules for component CSS** (D41):
 
-- `:root` holds only the variables that two or more components share: colours, text sizes, spacing, radii, borders and the focus ring. A variable that a single component uses is declared in that component's CSS file, on the component's own element: for example `--color-pressed` in the button's file and `--duration-spin` in the spinner's. It moves to `:root` when a second component needs it. A one-off size is written where it's used, such as the top bar's height. Colours are always variables, never written straight into a property.
+- `:root` holds only the variables that two or more components share: colours, text sizes, spacing, radii, borders and the focus ring. A variable that a single component uses is declared in that component's CSS file, on the component's own element: for example `--color-pressed` in the button's file and `--duration-spin` in the spinner's. It moves to `:root` when a second component needs it. A one-off size is written where it's used, such as the table header's height. Colours are always variables, never written straight into a property.
 - `ui/` components are closed: no `className` or `style` props, so looks change only through props such as `variant`.
 - Components have no outer margins; parents space their children with `gap`.
 - React Aria parts are styled through their state attributes (`[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`), not `:hover` or `:focus`, because CSS `:hover` sticks after a tap on touch screens. Other elements, such as the `NavTabs` links, put `:hover` inside `@media (hover: hover)` and show focus with `:focus-visible`.
@@ -323,7 +348,7 @@ Each has its examples file for the Components tab.
 **Motion:**
 
 - The chevron turns (a transform).
-- The faded "new period loading" state and the placeholders' pulse use opacity.
+- The fade while refreshing (150ms, to 60% and back) and the placeholders' pulse use opacity.
 - The chart's columns move briefly on change. That's a small SVG, so it's cheap to repaint.
 - All of it is off under reduced motion.
 
@@ -336,9 +361,8 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - `--color-control-border`: ink at 16%, the line around controls and floating cards. Figma's own line (ink at 8%) nearly disappears on a white control inside a white card.
 - `--color-tint`: ink at 8%, for the initials circle, the placeholders and inline code.
 - `--shadow-floating`: `0 0.25rem 1rem` in ink at 10%, shared by the dropdown's list and the chart label's card.
-- `--opacity-refreshing`: 0.6.
 - `--control-height`: 2.25rem (36px).
-- `--color-chart-other`: `#c7c7c6`.
+- `--color-chart-grey`: `#c7c7c6`, the chart's colour for a sixth or later part. It lives with the other chart colours in the chart's CSS file.
 
 **Variables with a single user so far,** each declared in its component's CSS file (§5.8):
 
@@ -347,6 +371,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - Chart: its five colours and the gridline colour (§5.8).
 - Spinner: `--duration-spin`, 800ms per turn.
 - Placeholder: `--duration-pulse`, 1s per pulse.
+- Clients page: `--opacity-refreshing`, 0.6.
 - Components page: `--space-32` (2rem between sections), and `--font-size-heading` with `--line-height-heading` (the 20/28 section names).
 
 **Top bar and tabs:**
@@ -355,7 +380,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - Tabs are 14/20 text links, 1.5rem apart, each as high as the bar.
 - The current tab is full ink with a 2px ink underline on the bar's bottom edge. The others are ink at 60%, and full ink on hover.
 - Keyboard focus is a 2px ink outline around the word.
-- The demo group sits on the right in 12/16 text: the label "Demo settings" at 60% ink, then the two switches.
+- The demo group sits on the right in 12/16 text: the label "Demo settings" at 60% ink, then the two switches and the "Reload" button (the standard button, in the group's text size).
 
 **Switch:**
 
@@ -375,20 +400,20 @@ Figma covers the title, the chart card and the table card. Everything else was m
 **Chart label:**
 
 - A white card, at least 10.5rem wide, with the control border, 0.5rem corners, 0.75rem padding and the floating shadow.
-- It lists the month (12/16 at 60% ink), the row's own total (14/20), then each part: its 8×8 colour square, its name at 60% ink and its number in full ink, right-aligned in tabular figures.
+- It lists the month (12/16 at 60% ink), the row's name with its own total (14/20, full ink), then each part: its 8×8 colour square, its name at 60% ink and its number in full ink. All numbers share one right-aligned column, in tabular figures.
 - The active column gets a band in the row-hover shade behind it, as high as the plot.
 
 **Disabled controls** (button, switch, dropdown): the whole control at half opacity, with the normal arrow cursor and no hover or pressed shade. In forced-colours mode they use the system's grey text colour.
 
 **Avatar initials:** 9px text at weight 500 in full ink, on ink at 8%.
 
-**First load:** the title and dropdown are real. The chart and table are white cards holding grey blocks (ink at 8%, 0.25rem corners) that fade gently, sized so nothing jumps when the data arrives.
+**First load:** the title and dropdown are real. The chart and table are white cards holding grey blocks (ink at 8%, 0.25rem corners) that fade gently, sized so nothing jumps when the data arrives. Twelve month columns and four rows (the company and three branches) are drawn. The header is two lines high wherever the real month headers wrap.
 
-**Refreshing:** the chart and table cards at 60% opacity, with the spinner by the dropdown.
+**Refreshing:** the chart and table cards fade to 60% opacity over 150ms (at once under reduced motion), with the spinner by the dropdown. They stay usable.
 
-**Error:** one white card with "Couldn't load clients" and the "Try again" button below it, centred, with 4rem of padding above and below.
+**Error:** one white card with "Couldn't load clients" and the "Try again" button below it, centred, with 4rem of padding above and below. Screen readers announce it when it appears (`role="alert"`).
 
-**Components page:** a "Components" title, then one section per component: its name at 20/28, and its examples in a grid of white cards, each with a 12/16 caption at 60% ink above it.
+**Components page:** a "Components" title with a short intro under it (what the page is, and why it isn't Storybook; at most 44rem wide), then one section per component: its name at 20/28, and its examples in a grid of white cards, each with a 12/16 caption at 60% ink above it.
 
 **Docs page:** one readable column, at most 44rem wide. Text is 16/26, the title 35/44, headings 20/28 at weight 600. Links are underlined. Tables are 14px with thin row lines and scroll inside their own box.
 
@@ -397,7 +422,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - A month column never gets narrower than 4rem (64px). When "Feb 2024" doesn't fit on one line, the header wraps to "Feb" over "2024". All headers wrap together, once a column has less than 4.25rem for its text; left alone, they would wrap one by one, because "Jul 2024" is narrower than "May 2024". So all twelve months fit without sideways scrolling down to a window about 1100px wide; below that the table scrolls inside its card, with the names pinned.
 - Below 40rem (640px), the name column is 10.5rem (168px) with a 1px line on its right edge, indents are 0.5rem per level, and names may wrap onto two lines. At 375px that shows two whole months and part of a third, which hints at the scrolling.
 
-**The rest of the page below 40rem:** the top bar wraps onto two lines (tabs, then the demo group), and the dropdown sits under the title. The chart's narrow look follows its own width (§5.6).
+**The rest of the page on narrow screens:** below 47rem the top bar goes onto two lines (tabs, then the demo group), because that is where its two halves stop fitting on one line (below about 28rem the "Reload" button wraps under the switches); below 40rem the dropdown sits under the title. The chart's narrow look follows its own width (§5.6).
 
 **Favicon:** three rising columns on a 16 × 16 grid, each stacked in lavender, peach and maroon.
 
@@ -416,7 +441,9 @@ Figma covers the title, the chart card and the table card. Everything else was m
   - the dropdown, switches and button come from React Aria
   - the tabs are links, with `aria-current`
   - the avatar is decorative
+  - the error message is announced when it appears; the spinners are named "Loading"; the first-load placeholders are hidden from screen readers
 - **Text contrast** (checked): the design's grey text (the ink at 60%) reaches 4.81:1 on the white cards and 4.68:1 on the page, above the 4.5:1 minimum. The main text is 18.4:1.
+  - The one exception: while refreshing, the cards are at 60% opacity, so for as long as the request runs the grey text is at 2.34:1 (names and numbers stay at 4.93:1). Accepted: it's the approved look, and any fade strong enough to see takes the grey text below 4.5:1 (D10).
 - **Also covered:**
   - visible focus everywhere, never hidden behind the pinned column
   - reduced motion respected
@@ -430,7 +457,7 @@ Measured as compressed JavaScript over React's own 67 KB (D13, D26, D27, D29–D
 
 | Loaded | Adds |
 |---|---|
-| On every page | React Aria about 84 KB, Recharts about 116, TanStack Query about 10, Zod Mini about 5, wouter about 2: roughly **280 KB** in total with React. Measured after the chart was built, before data loading: 258 KB, in four files (React 68, React Aria 82, Recharts 101, our own code 6) |
+| On every page | React Aria about 84 KB, Recharts about 116, TanStack Query about 10, Zod Mini about 5, wouter about 2: roughly **280 KB** in total with React. Measured with the dashboard built: 276 KB, in four files (React 68, React Aria 82, Recharts 101, and 24 for our own code together with TanStack Query, Zod Mini and wouter) |
 | Only on the Docs tab | react-markdown + remark-gfm, about 48 KB |
 | Only on the Components tab | the examples |
 | The font | 71 KB, cached after the first visit |
@@ -504,6 +531,7 @@ Testing is the last step of the build, and the list is decided then.
 - A picker for exact date ranges (D9).
 - A rule for breakdowns with more than five parts, e.g. the top five plus "Other" (D17).
 - Moving the component examples to Storybook (D37).
+- A message when a tab's code can't be loaded. The Components and Docs tabs load their code when first opened; if that fails (offline, or an old page after a new release), the page goes blank instead of saying so. Found while checking the dashboard offline.
 - Upgrading to TypeScript 7 once typescript-eslint supports it, and to MSW 3 once it has settled (D40).
 - The data mismatches, confirmed with whoever owns the data (D4).
 - Whether server tests are in scope, and the final test list (D36).

@@ -1,0 +1,80 @@
+.chartPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.captionPlaceholder,
+.legendPlaceholder {
+  display: flex;
+  align-items: center;
+}
+
+.captionPlaceholder {
+  height: 1.25rem;
+}
+
+.legendPlaceholder {
+  justify-content: center;
+  height: 1rem;
+}
+
+.headerPlaceholder,
+.rowPlaceholder {
+  display: grid;
+  grid-template-columns: 16.5rem;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(3rem, 1fr);
+  column-gap: var(--space-16);
+  min-height: 3.5rem;
+  padding-inline: var(--space-16) var(--space-24);
+  border-bottom: var(--border);
+}
+
+.headerPlaceholder {
+  align-items: end;
+  padding-block: var(--space-16) calc(var(--space-16) - var(--border-width));
+}
+
+.rowPlaceholder {
+  align-items: center;
+  justify-items: end;
+}
+
+.monthPlaceholder {
+  container-type: inline-size;
+}
+
+.monthNamePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 1.25rem;
+}
+
+@container (width < 4.25rem) {
+  .monthNamePlaceholder {
+    height: 2.5rem;
+  }
+}
+
+.companyNamePlaceholder,
+.branchNamePlaceholder {
+  justify-self: start;
+}
+
+.companyNamePlaceholder {
+  padding-inline-start: 1.5rem;
+}
+
+.branchNamePlaceholder {
+  padding-inline-start: 3.25rem;
+}
+
+@media (width < 40rem) {
+  .headerPlaceholder,
+  .rowPlaceholder {
+    grid-template-columns: 9rem;
+    padding-inline-end: var(--space-16);
+  }
+}

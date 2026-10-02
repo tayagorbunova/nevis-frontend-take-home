@@ -172,6 +172,23 @@ It uses the design's existing styles: Inter 14px, the same thin borders and colo
 
 - One spinner in the middle of the page for everything: less work, but the page jumps and the numbers disappear on every period change.
 
+**Update (2026-10-02, as built):**
+
+- **One rule while a request runs: the page keeps what was on screen,** whatever started the request ("Try again" or a new period). Numbers stay, faded to 60%, with the spinner by the dropdown. The error message stays too, with its button busy.
+- **Why one rule.** A first version showed the last good numbers, faded, when another period was chosen after a failure. With a fast server that drew the numbers for one frame between two error messages, and the page jumped from 200px high to about 760px and back. It also put another period's numbers under the new period's name, which this decision says the page doesn't do.
+- **One fact is remembered for it,** inside the data hook (`useClientCounts`): "the last request that finished had failed". The data library forgets a failure as soon as the next request starts, when that request has no numbers of its own. So pressing "Try again" cleared the very error the page was showing: the message was replaced by placeholders and the busy button was never seen. The fact changes only while no request is running (design §5.5 has the details, decision 26 the library's side).
+- **The fade is animated:** 150ms, both ways, and instant under reduced motion. Without it a fast answer made the cards blink at 60% for one frame on every period change.
+- **The placeholders sit where the real page will be, at every width.** Below a window of about 1344px the table's month headers wrap onto two lines, so the placeholder's header does the same. Measured at 11 widths from 320px to 1440px: nothing moves when the numbers arrive.
+- **The first-load placeholders always show twelve months and four rows,** as in the approved mockup. They aren't worked out from the chosen period, because which months come back is the server's answer.
+- **The message is announced** to screen readers when it appears.
+- **Offline:** a request made without a connection fails and shows the same message (decision 26).
+- **Coming back from another tab reloads nothing:** the numbers are there at once, at full strength (decision 26).
+- **Known limits, accepted:**
+  - While refreshing, text that is already grey (month names, axis labels, the legend) drops from 4.81:1 to 2.34:1 contrast for as long as the request runs. Names and numbers stay at 4.93:1. It is the approved look, and any fade strong enough to see takes the grey text below 4.5:1.
+  - When "Try again" succeeds, the button disappears with the message and keyboard focus isn't moved anywhere on purpose. The next Tab goes on to the chart, so nothing is lost.
+  - Nothing announces to screen readers that numbers are loading or have arrived. The spinner has the name "Loading"; the placeholders are hidden from them.
+  - When "Try again" fails again, the message is the one already on screen, so a screen reader may say nothing new. Not checked by ear (decision 14).
+
 ## 11. Demo settings: slow and failing responses on demand
 
 **Decision:** A slim "Demo settings" strip at the very top of the page, above the title, always visible on the dashboard (it later became part of the top bar with the tabs, see decision 21), with two switches:
@@ -179,7 +196,7 @@ It uses the design's existing styles: Inter 14px, the same thin borders and colo
 - **Slow responses:** every request takes an extra 2 seconds.
 - **Fail requests:** every request fails.
 
-When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too.
+When a switch is on, the app adds a note to each request, and the server really waits or really answers with an error. The switches are remembered across reloads, so the first-load states can be seen too. (Dropped on 2026-10-02: see the update below.)
 
 **Update (2026-10-01):** the server always obeys these notes. An earlier version had a "demo mode" setting to switch that off, but nothing used the off state: the app runs as a demo everywhere, and a note only affects the request that carries it, so nobody can slow or fail the site for anyone else. A real product wouldn't ship the demo switches at all.
 
@@ -190,6 +207,23 @@ When a switch is on, the app adds a note to each request, and the server really 
 - The app fakes the delay and the error itself: the server stays untouched, but the real error path is never exercised.
 - A collapsible panel: takes less space, but reviewers might never open it.
 - Only README instructions (browser developer tools, stopping the server): no code, but easy to miss.
+
+**Update (2026-10-02, as built):**
+
+- The two switches sit in the top bar, on the first tab only. A change starts a new request at once, also while another one is still running.
+- **The switches are not remembered.** They are ordinary page state next to the period and the opened rows, and a reload starts with both off. The first version saved them in the browser so that the first-load placeholders could be watched for two seconds after a reload. The repo owner dropped that: it took about 70 lines (reading and writing the storage, checking what was saved, a store outside React) for something the take-home doesn't need. The price: the first-load placeholders are only visible for a moment, on a real first load.
+- While a slow request runs, the numbers already on screen stay, faded, with the spinner; a failing one ends in the error message.
+- The top bar goes onto two lines below 42rem, not 40rem: with the first tab named "Implementation", the tabs and the demo group need about 664px to share a line.
+
+**Update (2026-10-02, the "Reload" button):**
+
+- **A "Reload" button sits next to the two switches.** It forgets every loaded answer and asks again, so the page starts as on a first visit: the placeholders, then the numbers. With "Slow responses" on, the placeholders stay for two seconds. With "Fail requests" on as well, they end in the error message: a first load that fails.
+- **Why:** without it, the first-load placeholders could be seen only for a moment on a real first load, or through tricks (leaving the tab in the middle of a slow request and coming back). The repo owner wanted every state reachable in an easy way.
+- **The switches no longer send a request themselves** (the repo owner's decision, once the button existed). They only say how the next requests behave: a new period, "Try again" or "Reload". So the settings left the request's cache key, and each request reads them when it is made. This replaces "A change starts a new request at once" above.
+- **From the error message, "Reload" works like "Try again":** the message stays, busy, until the answer arrives (decision 10's rule).
+- **"Reload" keeps the period and the opened rows.** It reloads the numbers, not the browser page.
+- **It is the standard button,** in the group's 12px text. No new look was designed for it. The component that holds the group is now `DemoControls`, since it holds more than switches.
+- **The top bar goes onto two lines below 47rem** (it was 42rem): with the button, the tabs and the demo group need about 740px to share a line. Below about 448px the button wraps under the switches, so on a phone the demo group takes two lines.
 
 ## 12. Hosted on Vercel
 
@@ -308,6 +342,7 @@ Recorded as [ADR 0003](adr/0003-components-on-react-aria.md).
 - **The table's focus outlines have the card's corner radius.** A square outline on the last row, or on a cell in a corner, was cut off by the card's rounded corner.
 - **All month headers break into two lines together,** once a column has less than 4.25rem for its text. Left alone they wrapped one by one in windows around 1280px wide, because "Jul 2024" is narrower than "May 2024".
 - **The space after the last column is an empty cell drawn by CSS** at the end of every row. Padding on the last cell instead would put the last number closer to its neighbour than the others are.
+- **An empty state** (added 2026-10-02 at the repo owner's request): with no rows the table shows its header and one row with a message the caller passes (`emptyMessage`). The message stays centred in the visible box when the table is scrolled sideways. The Components tab has an example of it.
 - **Numbers use tabular figures; names don't.** In Inter, tabular figures also widen the hyphen and the digit 1, so a name like "North-Western" would read "North - Western".
 - **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, and an automated accessibility scan with no findings.
 - **Not checked:** a real screen reader by ear (the names above are what the browser hands to one, not what was heard; decision 14 says why), Safari, and a real phone.
@@ -407,7 +442,7 @@ A side effect of the period filter: "Last month" fits on a phone without any scr
 | 4 | Sage green | `#6FAF9B` | new |
 | 5 | Mustard | `#E8C170` | new |
 
-Channels therefore get exactly the design's colours. Colours are never reused within one chart: in our data the biggest breakdown has five parts, and any sixth part would be grey. Real branches can have dozens of advisors, and a proper rule for that (e.g. top five plus "Other") is a README follow-up.
+Channels therefore get exactly the design's colours. Colours are never reused within one chart: in our data the biggest breakdown has five parts, and any sixth part would be grey (built as the colour name `grey`, `#c7c7c6`). Real branches can have dozens of advisors, and a proper rule for that (e.g. top five plus "Other") is a README follow-up.
 
 **Checked, not eyeballed:** a palette validator that simulates colour blindness says the five stay distinguishable for colour-blind people (worst neighbouring pair: 11.9 on its scale, where 8 is the target) and for full colour vision (17.9, where 15 is the minimum).
 
@@ -429,7 +464,7 @@ Channels therefore get exactly the design's colours. Colours are never reused wi
 | Mouse | Hovering a bar shows its label. |
 | Keyboard | The chart is a single Tab stop. ← / → move between months and the label follows; Home / End jump to the first / last month; Escape hides the label; Tab leaves the chart. |
 | Touch | Tapping a bar shows its label. |
-| Screen readers | Each bar carries the same text as its label, so the chart can be explored month by month. The chart also has a short description, e.g. "Company split by branch, February 2024 to January 2025; exact numbers are in the table below". |
+| Screen readers | Each bar carries the same text as its label, so the chart can be explored month by month. The chart also has a short description, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below". |
 
 The labels follow WCAG's rules for content that appears on hover or focus: Escape dismisses it, you can move the mouse onto it without it disappearing, and it stays until you move away.
 
@@ -442,6 +477,18 @@ The labels follow WCAG's rules for content that appears on hover or focus: Escap
 - **Escape is Recharts' own,** not our code (decision 29's update).
 - **The label can't be hovered.** It sits beside the active column, and moving the pointer onto it selects the month underneath, so the label moves there. The sentence above about moving the mouse onto it holds only in the sense that a label stays on screen. Every number in a label is also in the table.
 - **Two small quirks of Recharts, accepted:** the first month's label shows by itself only the first time the chart gets keyboard focus, and while the pointer rests on a column the arrow keys don't change the label.
+
+**Update (2026-10-02, on the dashboard):** the label follows the approved mockup, not the one-line example above. The month is on top, then the row's name with its total, then one line per part with its colour square. There are no colons: names are on the left and every number is in one right-aligned column, so a total sits right above its parts and a mismatch is easy to see.
+
+```text
+May 2024
+Company      301
+■ Branch 1   156
+■ Branch 2    87
+■ Branch 3    36
+```
+
+When the chart isn't split (the company row is closed), the label is the month and the company's one line, with its colour square. Screen readers get the same words, as separate pieces of text.
 
 **Options considered:**
 
@@ -462,9 +509,12 @@ Screen readers get the caption as part of the chart's description. They aren't i
 
 **Why:** It's short, it fits on a phone, and the table right below already shows the path through its indentation.
 
+**Update (2026-10-02):** the legend under the chart stays when every row is closed, with "Company" as its one entry. The chart first dropped the legend for a single colour, since the caption already names it. But then the chart card was 32px shorter while the company row was closed: the table jumped up, and the row moved out from under the pointer that had just clicked it.
+
 **Options considered:**
 
 - The full path ("Company › Branch 1 › Anna Blackwood, by channel"): shows where you are in the tree, but it gets long and wraps on phones.
+- The word "clients" on every legend entry ("Branch 1 clients", "Anna Blackwood's clients"): tried on 2026-10-02 and taken back out. On a 375px screen it made the legend two lines for the branches and three for the advisors.
 
 ## 20. A "Docs" tab shows the decisions, from the repo's own Markdown
 
@@ -584,6 +634,21 @@ The page never imports server code; both import the contract. On Vercel it's one
 - Our own small helper around `fetch` (about 60–80 lines): no dependency, but we'd rebuild what TanStack Query already does and have to test those tricky cases ourselves.
 - React 19's newer tools (`use`, Suspense, transitions): modern, but remembering answers, retries and cancelling would still be ours to build, and the loading and error flow is harder to follow and explain.
 
+**Update (2026-10-02, as built):**
+
+- Two settings differ from the library's defaults: no automatic retries, and no reload when the window gets focus (design §5.5 says why).
+- The loading function returns checked data or throws one of two errors: `ApiError` (the server answered with an error; it carries the status and the server's code) or `InvalidResponseError` (the answer didn't match the contract).
+- Data that nothing is using is kept for five minutes, the library's default. So coming back from another tab within that time shows the numbers at once.
+- In development the first request appears twice, with the first one cancelled. That is React's strict mode mounting things twice on purpose; the built site sends one.
+- Still open, for the page task: what an offline browser shows. By default the library waits for the connection instead of failing, so the page would show placeholders, not the error.
+
+**Update (2026-10-02, the page as built):**
+
+- **Offline is decided:** a third setting, `networkMode: "always"`. A request made while the browser is offline is tried, fails, and shows the error message with "Try again". Back online nothing reloads by itself; "Try again" does. Measured with the library's default: after choosing another period offline, the dropdown showed the new period while the old twelve months stayed at full strength, with no spinner and no error, for as long as we waited. The library had parked the request until the connection came back.
+- **One thing the library doesn't remember for us.** When a request that has only ever failed starts again, the library sets its error back to "none" (`fetchState` in its `query.ts`). A request that loaded earlier and failed on a reload keeps both its numbers and its error. So "did the last request fail?" can't be read from the library alone while a retry runs, and the data hook keeps that one fact itself (decision 10's update).
+- **The page shows the error message when that fact is true, and looks at nothing else.** A first version also showed it whenever the library reported an error. Measured after a real network failure: a period that had both numbers and an old failure in the cache showed the error message for 80ms between two sets of numbers when it was chosen again, and the page jumped from about 760px high to 200px and back. Now the period's own numbers show faded while it loads, like any other period already seen.
+- **Coming back from another tab sends no request:** a fourth setting, `refetchOnMount: false`. The page is rebuilt each time its tab is opened, and by default the library then reloads numbers it already has. Measured: on every return the cards appeared at 60% with the spinner and faded up to 100%, about 190ms in all. It is the same reasoning as for window focus: nothing reloads behind the reader's back. Choosing a period and "Try again" still ask the server every time, also for a period already seen. A page that has no numbers (a failed load) still asks again when its tab is opened.
+
 ## 27. Data is checked at runtime with shared Zod schemas
 
 **Problem:** TypeScript checks our code while we write it, but not what actually arrives over the network. Outside data enters in two places: the server receives the period from the page, and the page receives the data from the server.
@@ -605,7 +670,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 ## 28. The dashboard's state isn't kept in the page address
 
-**Decision:** The address says only which tab you're on (`/` or `/docs`, decision 21). The chosen period and the opened rows aren't in it, so every reload starts fresh: the last 12 months, company open. The demo switches are still remembered by the browser (decision 11).
+**Decision:** The address says only which tab you're on (`/` or `/docs`, decision 21). The chosen period and the opened rows aren't in it, so every reload starts fresh: the last 12 months, company open. The demo switches start off again too (decision 11).
 
 **Why:** Putting the state in the address makes views shareable, and whether they should be shareable is a product question to answer first. Who shares with whom? Should an advisor's link show a colleague's numbers? Until that's settled, we don't build it.
 
@@ -643,11 +708,11 @@ The page never imports server code; both import the contract. On Vercel it's one
 
 - **No Escape code of ours.** Recharts 3.10.1 hides the label on Escape by itself, listening on the whole page, so it also works while the pointer rests on a column and keyboard focus is elsewhere. Our own handler on top disagreed with it in small ways, so it was removed.
 - **The chart is named by its visible caption** (`aria-labelledby`), not by Recharts' `title`. A `title` becomes the picture's built-in title, which browsers show as their own tooltip on hover, on top of our label.
-- **The label's card is drawn by the chart; the feature supplies the content.** The same content is also placed in a hidden region that screen readers announce, and the visible card is hidden from them so the text isn't read twice.
+- **The label's card is drawn by the chart; the feature supplies the content.** The same content is also placed in a hidden region that screen readers announce, and the visible card is hidden from them so the text isn't read twice. (Changed on 2026-10-02: the chart now draws the content too. See the update below.)
 - **One rule for the narrow look, from the chart's own width:** when a month has less than 64px, the month labels are tilted at 60° in 11px text and the columns sit 0.5rem apart. The plot gets a little shorter there, because tilted labels need 64px under it instead of 30px. Tilted labels are always all shown; horizontal ones are left out when they would touch. A rule tied to the page's width would break a chart sitting in a narrow box on a wide page. With twelve months it starts below a window of about 870px.
 - **The axis has five round steps, as in Figma** (0, 100, 200, 300, 400). The price: when the tallest column is just over a round step, the axis jumps to the next one and half the plot stays empty (a peak of 214 gets an axis to 400).
 - **The chart's colours are declared in the chart's own CSS file,** because only the chart uses them (decision 41's rule).
-- **A series names its colour** (`color: "lavender"`), and the chart turns the name into the matching CSS variable. Only the five palette names are allowed (`ChartColor`), so a typo or a colour from outside the palette is a compile error, and code that uses the chart never writes a CSS variable itself.
+- **A series names its colour** (`color: "lavender"`), and the chart turns the name into the matching CSS variable. Only the five palette names are allowed (`ChartColor`), so a typo or a colour from outside the palette is a compile error, and code that uses the chart never writes a CSS variable itself. The palette's names are written once, as an ordered list next to the chart (`CHART_PALETTE`); the type is worked out from that list, and the dashboard hands the colours out by position from the same list.
 - **The chart's own names say "column", not "month"** (`columnNames`, `renderLabel(columnIndex)`). It's a generic component that knows nothing about what its columns stand for; the dashboard is what passes months.
 - **The numbers handed to Recharts are plain pixels,** because it draws a picture with its own units. They reproduce Figma's plot: 8px above the plot, a 320px plot and a 30px axis make Figma's 358px; the y axis is 38px (26px of labels and a 12px gap); columns stop growing at 88px; the label's card sits 40px from the top and 8px beside the band.
 - **Axis text may leave the picture's box.** With very large browser text the labels then show in the card's padding instead of being cut off.
@@ -657,6 +722,18 @@ The page never imports server code; both import the contract. On Vercel it's one
 - **Checked:** Chrome and Firefox, an emulated phone, forced colours, reduced motion, large text, 200% zoom, one, three and five series, and a production build.
 - **Not checked:** Safari, a real phone, and a screen reader by ear (decision 14).
 - **Known limits, accepted:** on a phone, a swipe that starts on the chart leaves that column's label showing until a tap elsewhere; with browser text at 200% in a 375px window the label's card is wider than the chart.
+
+**Update (2026-10-02, on the dashboard):**
+
+- **A chart with a different list of column names is built fresh** (a `key` on the chart, made from the names). Found on the dashboard: the dropdown's list opens over the chart's corner, so after picking "Last month" or "Last 3 months" with the mouse the pointer rests on the chart. The grey band behind the "active" column was then drawn in the wrong place, sticking out of the card to the window's edge, until the pointer moved. Recharts keeps the hovered position in pixels from the old columns and draws the band there with the new column width. With the `key`, nothing Recharts remembered about the old columns is left over.
+- **Its visible side effect:** when the months change, the columns grow up from the baseline, as on first load. Before, the old columns slid sideways into the new ones. Opening and closing rows keeps the old movement, because the months don't change there.
+- **A known limit of it, accepted:** if the chart has keyboard focus at the moment new months arrive, the focus falls back to the page, because the focused chart is replaced. It needs a period change followed by Tab to the chart before the answer is back. The next Tab lands on the chart again.
+- **The legend is always shown,** also for a single series (decision 19's update).
+- **The chart draws its own label** (the repo owner's decision, at the dashboard's review). Until then the chart took a `renderLabel` function: it drew the white card, and the dashboard built the lines inside it.
+  - *Why it was a function at first:* the label shows the row's own total from the server, and the chart only knew the parts. Nothing is ever added up (decision 4: 301 against 279), so the dashboard had to supply that line, and with it the whole content.
+  - *What was wrong with that:* one visual element was split in two. The card's look lived in the chart, and its lines (colour squares, names, numbers) were built again on the dashboard, with a small `ChartSwatch` component exported only so the dashboard could draw the chart's own squares. The Components tab could only show a stand-in label.
+  - *How it works now:* everything in the label is plain data, so the chart gets the missing pieces as data: `total?: { name, values }` for the total line, and `formatValue` for writing numbers. The chart still never adds up: it shows the total it was handed. The dashboard's `ChartLabel` and the exported `ChartSwatch` are gone; the Components tab shows the real label.
+  - *One visible change:* a one-colour chart (the company row closed) passes no total, so its label is the month and the one series, with its colour square: "May 2024, ■ Company 301". Before, that line had no square.
 
 **Cost:**
 
@@ -816,6 +893,8 @@ It loads only when opened. Each component's examples sit in one file next to it 
 
 **Later:** "Move the examples to Storybook" is a README follow-up. Because the examples are written story-style, that's mostly copying.
 
+**Update (2026-10-02):** the page opens with a short intro in the repo owner's own voice: what the page is, and why it's a simple page inside the app and not Storybook.
+
 **Options considered** (checked 2026-10-01):
 
 - Storybook 10, the industry standard (26.9M weekly downloads, 91k stars, released 2026-09-29): stories, live controls, a per-story accessibility checker, documentation pages, and stories that can run as tests. It can be served from the same deployment (e.g. under `/storybook/`), but it's still a separate app, with its own build, setup, dependencies and interface; our tab would open it or embed it in a frame. It pays off for a team with dozens of components, and it's heavy for our eight or so.
@@ -830,8 +909,8 @@ It loads only when opened. Each component's examples sit in one file next to it 
 | When | Style | Our components |
 |---|---|---|
 | The user of the component assembles its structure | Compound parts | `NavTabs` (`NavTabs.Link` for each tab) |
-| The component is driven by data | Props with render functions | `TreeTable` (columns described as data), `StackedColumnChart` (`renderLabel`) |
-| A simple control or container | Plain props | `Select`, `Switch`, `Avatar`, `Skeleton`, `Card`, `Button` |
+| The component is driven by data | Props with render functions | `TreeTable` (columns described as data) |
+| A simple control or container, or data with nothing of the caller's to draw | Plain props | `Select`, `Switch`, `Avatar`, `Skeleton`, `Card`, `Button`, `StackedColumnChart` |
 
 **`TreeTable` in practice:** the feature describes each column once, with its header and a `cell` function for drawing that column's cell. `TreeTable` handles the tree itself: the recursion into children, chevrons only on rows that can open, indentation, ignoring clicks on rows without children, and the pinned first column.
 

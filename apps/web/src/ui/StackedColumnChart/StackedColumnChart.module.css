@@ -4,6 +4,7 @@
   --color-chart-maroon: #a75e6e;
   --color-chart-sage: #6faf9b;
   --color-chart-mustard: #e8c170;
+  --color-chart-grey: #c7c7c6;
   --color-gridline: rgb(20 20 19 / 16%);
 
   display: flex;
@@ -37,6 +38,9 @@
 }
 
 .label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-width: 10.5rem;
   padding: var(--space-12);
   background: var(--color-card);
@@ -45,6 +49,27 @@
   box-shadow: var(--shadow-floating);
   color: var(--color-text);
   font-size: var(--font-size-body);
+}
+
+.labelColumnName {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-footnote);
+  line-height: var(--line-height-footnote);
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.labelSeriesName {
+  color: var(--color-text-muted);
+}
+
+.labelValue {
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-16);
 }
 
 .legend {

@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { VisuallyHidden } from "react-aria-components";
 import {
@@ -12,9 +12,8 @@ import {
   YAxis,
 } from "recharts";
 
+import type { ChartColor } from "./palette";
 import styles from "./StackedColumnChart.module.css";
-
-export type ChartColor = "lavender" | "peach" | "maroon" | "sage" | "mustard";
 
 export type ChartSeries = {
   id: string;
@@ -23,12 +22,18 @@ export type ChartSeries = {
   values: readonly number[];
 };
 
+export type ChartTotal = {
+  name: string;
+  values: readonly number[];
+};
+
 type StackedColumnChartProps = {
   title: string;
   description: string;
   columnNames: readonly string[];
   series: readonly ChartSeries[];
-  renderLabel: (columnIndex: number) => ReactNode;
+  total?: ChartTotal;
+  formatValue: (value: number | undefined) => string;
 };
 
 const MIN_SPACE_PER_COLUMN_FOR_HORIZONTAL_NAMES = 64;
@@ -52,6 +57,12 @@ function toCssColor(color: ChartColor) {
   return `var(--color-chart-${color})`;
 }
 
+type SwatchProps = { color: ChartColor };
+
+function Swatch({ color }: SwatchProps) {
+  return <span className={styles.swatch} style={{ background: toCssColor(color) }} />;
+}
+
 type PlotWidthReporterProps = { onChange: (width: number) => void };
 
 function PlotWidthReporter({ onChange }: PlotWidthReporterProps) {
@@ -68,21 +79,53 @@ type ColumnLabelProps = {
   active?: boolean;
   activeIndex?: string | null;
   statusRegion: HTMLElement | null;
-  renderLabel: (columnIndex: number) => ReactNode;
+  columnNames: readonly string[];
+  series: readonly ChartSeries[];
+  total?: ChartTotal;
+  formatValue: (value: number | undefined) => string;
 };
 
-function ColumnLabel({ active, activeIndex, statusRegion, renderLabel }: ColumnLabelProps) {
+function ColumnLabel({
+  active,
+  activeIndex,
+  statusRegion,
+  columnNames,
+  series,
+  total,
+  formatValue,
+}: ColumnLabelProps) {
   if (!active) return null;
 
-  const content = renderLabel(Number(activeIndex));
+  const columnIndex = Number(activeIndex);
+
+  const rows = (
+    <>
+      <div className={styles.labelColumnName}>{columnNames[columnIndex]}</div>
+
+      {total && (
+        <div className={styles.labelRow}>
+          {total.name}
+          <span className={styles.labelValue}>{formatValue(total.values[columnIndex])}</span>
+        </div>
+      )}
+
+      {series.map(({ id, name, color, values }) => (
+        <div key={id} className={styles.labelRow}>
+          <Swatch color={color} />
+          <span className={styles.labelSeriesName}>{name}</span>
+          <span className={styles.labelValue}>{formatValue(values[columnIndex])}</span>
+        </div>
+      ))}
+    </>
+  );
 
   return (
     <>
       <div className={styles.label} aria-hidden="true">
-        {content}
+        {rows}
       </div>
 
-      {statusRegion && createPortal(content, statusRegion)}
+      {statusRegion && createPortal(rows, statusRegion)}
     </>
   );
 }
@@ -92,7 +135,8 @@ export function StackedColumnChart({
   description,
   columnNames,
   series,
-  renderLabel,
+  total,
+  formatValue,
 }: StackedColumnChartProps) {
   const captionId = useId();
 
@@ -111,6 +155,7 @@ export function StackedColumnChart({
       <figcaption id={captionId}>{title}</figcaption>
 
       <BarChart
+        key={columnNames.join()}
         className={styles.plot}
         responsive
         data={columns}
@@ -147,7 +192,15 @@ export function StackedColumnChart({
           cursor={{ fill: "var(--color-row-hover)" }}
           offset={spacePerColumn / 2 + 8}
           position={{ y: 40 }}
-          content={<ColumnLabel statusRegion={statusRegion} renderLabel={renderLabel} />}
+          content={
+            <ColumnLabel
+              statusRegion={statusRegion}
+              columnNames={columnNames}
+              series={series}
+              total={total}
+              formatValue={formatValue}
+            />
+          }
         />
 
         <BarStack radius={4}>
@@ -161,16 +214,14 @@ export function StackedColumnChart({
         <div ref={setStatusRegion} role="status" />
       </VisuallyHidden>
 
-      {series.length > 1 && (
-        <ul className={styles.legend}>
-          {series.map(({ id, name, color }) => (
-            <li key={id} className={styles.legendItem}>
-              <span className={styles.swatch} style={{ background: toCssColor(color) }} />
-              {name}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className={styles.legend}>
+        {series.map(({ id, name, color }) => (
+          <li key={id} className={styles.legendItem}>
+            <Swatch color={color} />
+            {name}
+          </li>
+        ))}
+      </ul>
     </figure>
   );
 }
