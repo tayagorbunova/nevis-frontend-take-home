@@ -11,9 +11,11 @@
   --font-family: "Inter Variable", system-ui, sans-serif;
   --font-size-footnote: 0.75rem;
   --font-size-body: 0.875rem;
+  --font-size-heading: 1.25rem;
   --font-size-title: 2.1875rem;
   --line-height-footnote: 1.333;
   --line-height-body: 1.4286;
+  --line-height-heading: 1.4;
   --line-height-title: 1.25;
 
   --space-4: 0.25rem;
