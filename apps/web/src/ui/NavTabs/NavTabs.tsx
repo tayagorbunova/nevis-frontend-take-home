@@ -16,14 +16,15 @@ export function NavTabs({ label, children }: NavTabsProps) {
 type NavTabsLinkProps = PropsWithChildren<{ href: string }>;
 
 function NavTabsLink({ href, children }: NavTabsLinkProps) {
-  const [isCurrent] = useRoute(href);
+  const [isCurrent] = useRoute(href === "/" ? href : `${href}/*?`);
+  const [isSameAddress] = useRoute(href);
 
   return (
     <li className={styles.item}>
       <Link
         className={styles.link}
         href={href}
-        replace={isCurrent}
+        replace={isSameAddress}
         aria-current={isCurrent ? "page" : undefined}
       >
         <span className={styles.text}>{children}</span>
