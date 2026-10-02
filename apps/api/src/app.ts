@@ -1,6 +1,9 @@
 import {
+  CLIENT_COUNTS_PATH,
   DEFAULT_PERIOD,
+  DEMO_FAIL,
   DEMO_HEADER,
+  DEMO_SLOW,
   PERIODS,
   periodSchema,
   type ApiErrorBody,
@@ -20,16 +23,16 @@ export function createApp() {
     c.header("Cache-Control", "no-store");
   });
 
-  app.get("/api/client-counts", async (c) => {
+  app.get(CLIENT_COUNTS_PATH, async (c) => {
     // Demo only: the page's "Slow responses" and "Fail requests" switches send this header,
     // so reviewers can see the loading and error states.
     const demo = c.req.header(DEMO_HEADER) ?? "";
 
-    if (demo.includes("slow")) {
+    if (demo.includes(DEMO_SLOW)) {
       await new Promise((resolve) => setTimeout(resolve, DEMO_DELAY_MS));
     }
 
-    if (demo.includes("fail")) {
+    if (demo.includes(DEMO_FAIL)) {
       return c.json(
         {
           error: { code: "internal_error", message: "Simulated failure (demo)" },

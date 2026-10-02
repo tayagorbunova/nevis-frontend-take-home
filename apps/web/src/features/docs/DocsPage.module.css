@@ -1,0 +1,56 @@
+.docs {
+  --font-size-prose: 1rem;
+  --line-height-prose: 1.625;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding-bottom: calc(4rem - var(--space-24));
+}
+
+.tabs {
+  display: flex;
+  min-height: 2.5rem;
+  border-bottom: var(--border);
+}
+
+.prose {
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-prose);
+}
+
+.prose > * {
+  margin: 0;
+}
+
+.prose > * + * {
+  margin-top: var(--space-16);
+}
+
+.prose h2 {
+  margin-top: 2.5rem;
+  font-size: var(--font-size-heading);
+  font-weight: 600;
+  line-height: var(--line-height-heading);
+}
+
+.prose h3 {
+  margin-top: var(--space-24);
+  font-size: var(--font-size-prose);
+  font-weight: 600;
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose ul {
+  padding-inline-start: 1.25rem;
+}
+
+.prose li + li {
+  margin-top: var(--space-4);
+}

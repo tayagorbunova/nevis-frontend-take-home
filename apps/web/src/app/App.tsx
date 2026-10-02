@@ -43,7 +43,15 @@ export function App() {
             </Route>
 
             <Route path="/docs">
-              <DocsPage />
+              <Redirect to="/docs/product" replace />
+            </Route>
+
+            <Route path="/docs/product">
+              <DocsPage doc="product" />
+            </Route>
+
+            <Route path="/docs/technical">
+              <DocsPage doc="technical" />
             </Route>
 
             <Route>
