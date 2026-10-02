@@ -66,6 +66,8 @@ const columns: TreeTableColumn<SampleRow>[] = [
   })),
 ];
 
+const doNothing = () => undefined;
+
 function Default() {
   const [openRowIds, setOpenRowIds] = useState<ReadonlySet<string>>(() => new Set(["company"]));
 
@@ -93,4 +95,19 @@ function Default() {
   );
 }
 
-export const examples: Examples = { Default };
+function Empty() {
+  return (
+    <TreeTable
+      label="Example table without rows"
+      rows={[]}
+      getRowId={(row) => row.id}
+      getChildren={(row) => row.children}
+      openRowIds={new Set()}
+      onRowOpenChange={doNothing}
+      columns={columns}
+      emptyMessage="No rows to show"
+    />
+  );
+}
+
+export const examples: Examples = { Default, Empty };

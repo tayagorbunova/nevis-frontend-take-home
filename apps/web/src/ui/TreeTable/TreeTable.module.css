@@ -108,6 +108,19 @@
   overflow-wrap: anywhere;
 }
 
+.body[data-empty] td {
+  padding: 0;
+}
+
+.emptyMessage {
+  position: sticky;
+  inset-inline-start: 0;
+  width: 100cqi;
+  padding: 1.125rem var(--space-16);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .chevron,
 .chevronSpace {
   flex: none;

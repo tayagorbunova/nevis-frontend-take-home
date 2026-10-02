@@ -43,6 +43,7 @@ type TreeTableProps<Row> = {
   openRowIds: ReadonlySet<string>;
   onRowOpenChange: (id: string, isOpen: boolean) => void;
   columns: readonly TreeTableColumn<Row>[];
+  emptyMessage?: string;
 };
 
 export function TreeTable<Row>({
@@ -53,6 +54,7 @@ export function TreeTable<Row>({
   openRowIds,
   onRowOpenChange,
   columns,
+  emptyMessage,
 }: TreeTableProps<Row>) {
   const dependencies = [columns, openRowIds];
 
@@ -127,7 +129,12 @@ export function TreeTable<Row>({
           ))}
         </TableHeader>
 
-        <TableBody items={rows} dependencies={dependencies}>
+        <TableBody
+          className={styles.body}
+          items={rows}
+          dependencies={dependencies}
+          renderEmptyState={() => <div className={styles.emptyMessage}>{emptyMessage}</div>}
+        >
           {renderRow}
         </TableBody>
       </Table>
