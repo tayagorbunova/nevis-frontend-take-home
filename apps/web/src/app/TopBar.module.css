@@ -19,7 +19,7 @@
   align-items: center;
 }
 
-@media (width < 42rem) {
+@media (width < 47rem) {
   .topBar {
     flex-direction: column;
     gap: 0;

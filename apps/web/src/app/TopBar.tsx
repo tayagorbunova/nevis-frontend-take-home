@@ -2,8 +2,8 @@ import { useRoute } from "wouter";
 
 import { NavTabs } from "@ui";
 
+import { DemoControls } from "../features/demo/DemoControls";
 import type { DemoSettings } from "../features/demo/demoSettings";
-import { DemoSwitches } from "../features/demo/DemoSwitches";
 
 import styles from "./TopBar.module.css";
 
@@ -27,7 +27,7 @@ export function TopBar({ demoSettings, onDemoSettingsChange }: TopBarProps) {
 
       {isImplementationTab && (
         <div className={styles.demo}>
-          <DemoSwitches settings={demoSettings} onChange={onDemoSettingsChange} />
+          <DemoControls settings={demoSettings} onChange={onDemoSettingsChange} />
         </div>
       )}
     </header>

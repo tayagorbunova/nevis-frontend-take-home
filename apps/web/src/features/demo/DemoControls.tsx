@@ -1,17 +1,19 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useId } from "react";
 
-import { Switch } from "@ui";
+import { Button, Switch } from "@ui";
 
-import styles from "./DemoSwitches.module.css";
+import styles from "./DemoControls.module.css";
 import type { DemoSettings } from "./demoSettings";
 
-type DemoSwitchesProps = {
+type DemoControlsProps = {
   settings: DemoSettings;
   onChange: (settings: DemoSettings) => void;
 };
 
-export function DemoSwitches({ settings, onChange }: DemoSwitchesProps) {
+export function DemoControls({ settings, onChange }: DemoControlsProps) {
   const labelId = useId();
+  const queryClient = useQueryClient();
 
   return (
     <div className={styles.group} role="group" aria-labelledby={labelId}>
@@ -26,6 +28,8 @@ export function DemoSwitches({ settings, onChange }: DemoSwitchesProps) {
       <Switch isSelected={settings.fail} onChange={(fail) => onChange({ ...settings, fail })}>
         Fail requests
       </Switch>
+
+      <Button onPress={() => void queryClient.resetQueries()}>Reload</Button>
     </div>
   );
 }
