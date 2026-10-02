@@ -24,7 +24,17 @@ export function GalleryPage() {
   return (
     <div className={styles.gallery}>
       <title>Components · Nevis home task</title>
-      <h1>Components</h1>
+
+      <header className={styles.header}>
+        <h1>Components</h1>
+
+        <p className={styles.intro}>
+          A gallery of all the components the app is built from. In a real project I would use
+          Storybook. Here it would mean a separate app with its own setup, build and dependencies,
+          so I went with the simpler option: a small page that shows each component in its main
+          states.
+        </p>
+      </header>
 
       {sections.map(({ title, wide, examples }) => (
         <section key={title} className={styles.section}>
