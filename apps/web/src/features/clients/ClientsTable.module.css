@@ -1,0 +1,12 @@
+.name,
+.channelName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+@media (width < 40rem) {
+  .channelName {
+    padding-inline-start: 1.25rem;
+  }
+}

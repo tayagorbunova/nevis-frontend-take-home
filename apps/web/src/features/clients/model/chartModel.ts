@@ -1,4 +1,4 @@
-import { CHART_PALETTE, type ChartSeries } from "@ui";
+import { CHART_PALETTE, type ChartSeries, type ChartTotal } from "@ui";
 
 import { formatMonth } from "../format";
 
@@ -9,7 +9,7 @@ export type ChartModel = {
   caption: string;
   description: string;
   series: ChartSeries[];
-  totals: number[];
+  total?: ChartTotal;
 };
 
 export function chartModel(subject: ChartSubject, months: readonly string[]): ChartModel {
@@ -24,7 +24,7 @@ export function chartModel(subject: ChartSubject, months: readonly string[]): Ch
     caption,
     description: `${caption}, ${describeMonths(months)}. Exact numbers are in the table below.`,
     series: parts.map(toSeries),
-    totals: row.values,
+    total: isSplit ? { name: row.name, values: row.values } : undefined,
   };
 }
 

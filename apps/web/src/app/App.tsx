@@ -1,3 +1,4 @@
+import { DEFAULT_PERIOD } from "@nevis/contract";
 import { lazy, Suspense, useState } from "react";
 import { Redirect, Route, Switch } from "wouter";
 
@@ -16,6 +17,8 @@ const DocsPage = lazy(() =>
 );
 
 export function App() {
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
+  const [openedRowIds, setOpenedRowIds] = useState<string[] | null>(null);
   const [demoSettings, setDemoSettings] = useState(DEMO_SETTINGS_OFF);
 
   return (
@@ -26,7 +29,13 @@ export function App() {
         <Suspense fallback={null}>
           <Switch>
             <Route path="/">
-              <ClientsPage />
+              <ClientsPage
+                period={period}
+                onPeriodChange={setPeriod}
+                openedRowIds={openedRowIds}
+                onOpenedRowIdsChange={setOpenedRowIds}
+                demoSettings={demoSettings}
+              />
             </Route>
 
             <Route path="/components">

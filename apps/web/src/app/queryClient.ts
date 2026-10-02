@@ -5,7 +5,9 @@ export function createQueryClient() {
     defaultOptions: {
       queries: {
         retry: false,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
+        networkMode: "always",
       },
     },
   });
