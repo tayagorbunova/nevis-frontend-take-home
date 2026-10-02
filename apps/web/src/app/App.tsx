@@ -1,7 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Redirect, Route, Switch } from "wouter";
 
 import { ClientsPage } from "../features/clients/ClientsPage";
+import { DEMO_SETTINGS_OFF } from "../features/demo/demoSettings";
 
 import styles from "./App.module.css";
 import { TopBar } from "./TopBar";
@@ -15,9 +16,11 @@ const DocsPage = lazy(() =>
 );
 
 export function App() {
+  const [demoSettings, setDemoSettings] = useState(DEMO_SETTINGS_OFF);
+
   return (
     <>
-      <TopBar />
+      <TopBar demoSettings={demoSettings} onDemoSettingsChange={setDemoSettings} />
 
       <main className={styles.page}>
         <Suspense fallback={null}>
