@@ -12,9 +12,8 @@ import {
   YAxis,
 } from "recharts";
 
+import type { ChartColor } from "./palette";
 import styles from "./StackedColumnChart.module.css";
-
-export type ChartColor = "lavender" | "peach" | "maroon" | "sage" | "mustard";
 
 export type ChartSeries = {
   id: string;
