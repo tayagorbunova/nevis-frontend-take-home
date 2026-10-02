@@ -407,7 +407,7 @@ A side effect of the period filter: "Last month" fits on a phone without any scr
 | 4 | Sage green | `#6FAF9B` | new |
 | 5 | Mustard | `#E8C170` | new |
 
-Channels therefore get exactly the design's colours. Colours are never reused within one chart: in our data the biggest breakdown has five parts, and any sixth part would be grey. Real branches can have dozens of advisors, and a proper rule for that (e.g. top five plus "Other") is a README follow-up.
+Channels therefore get exactly the design's colours. Colours are never reused within one chart: in our data the biggest breakdown has five parts, and any sixth part would be grey (built as the colour name `grey`, `#c7c7c6`). Real branches can have dozens of advisors, and a proper rule for that (e.g. top five plus "Other") is a README follow-up.
 
 **Checked, not eyeballed:** a palette validator that simulates colour blindness says the five stay distinguishable for colour-blind people (worst neighbouring pair: 11.9 on its scale, where 8 is the target) and for full colour vision (17.9, where 15 is the minimum).
 
@@ -429,7 +429,7 @@ Channels therefore get exactly the design's colours. Colours are never reused wi
 | Mouse | Hovering a bar shows its label. |
 | Keyboard | The chart is a single Tab stop. ← / → move between months and the label follows; Home / End jump to the first / last month; Escape hides the label; Tab leaves the chart. |
 | Touch | Tapping a bar shows its label. |
-| Screen readers | Each bar carries the same text as its label, so the chart can be explored month by month. The chart also has a short description, e.g. "Company split by branch, February 2024 to January 2025; exact numbers are in the table below". |
+| Screen readers | Each bar carries the same text as its label, so the chart can be explored month by month. The chart also has a short description, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below". |
 
 The labels follow WCAG's rules for content that appears on hover or focus: Escape dismisses it, you can move the mouse onto it without it disappearing, and it stays until you move away.
 
@@ -647,7 +647,7 @@ The page never imports server code; both import the contract. On Vercel it's one
 - **One rule for the narrow look, from the chart's own width:** when a month has less than 64px, the month labels are tilted at 60° in 11px text and the columns sit 0.5rem apart. The plot gets a little shorter there, because tilted labels need 64px under it instead of 30px. Tilted labels are always all shown; horizontal ones are left out when they would touch. A rule tied to the page's width would break a chart sitting in a narrow box on a wide page. With twelve months it starts below a window of about 870px.
 - **The axis has five round steps, as in Figma** (0, 100, 200, 300, 400). The price: when the tallest column is just over a round step, the axis jumps to the next one and half the plot stays empty (a peak of 214 gets an axis to 400).
 - **The chart's colours are declared in the chart's own CSS file,** because only the chart uses them (decision 41's rule).
-- **A series names its colour** (`color: "lavender"`), and the chart turns the name into the matching CSS variable. Only the five palette names are allowed (`ChartColor`), so a typo or a colour from outside the palette is a compile error, and code that uses the chart never writes a CSS variable itself.
+- **A series names its colour** (`color: "lavender"`), and the chart turns the name into the matching CSS variable. Only the five palette names are allowed (`ChartColor`), so a typo or a colour from outside the palette is a compile error, and code that uses the chart never writes a CSS variable itself. The palette's names are written once, as an ordered list next to the chart (`CHART_PALETTE`); the type is worked out from that list, and the dashboard hands the colours out by position from the same list.
 - **The chart's own names say "column", not "month"** (`columnNames`, `renderLabel(columnIndex)`). It's a generic component that knows nothing about what its columns stand for; the dashboard is what passes months.
 - **The numbers handed to Recharts are plain pixels,** because it draws a picture with its own units. They reproduce Figma's plot: 8px above the plot, a 320px plot and a 30px axis make Figma's 358px; the y axis is 38px (26px of labels and a 12px gap); columns stop growing at 88px; the label's card sits 40px from the top and 8px beside the band.
 - **Axis text may leave the picture's box.** With very large browser text the labels then show in the card's padding instead of being cut off.

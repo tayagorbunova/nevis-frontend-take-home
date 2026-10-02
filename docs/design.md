@@ -187,7 +187,7 @@ Everything else is worked out from these two values, never stored. The data itse
   - **`caption`**: "Company by branch", "Branch 1 by advisor" or "Anna Blackwood by channel", named after the children's level (D19). It's just "Company" when the company is closed.
   - **`series`**: one entry per child, `{ id, name, color, values }`, coloured in the palette's order (D17), with a sixth or later child in a neutral grey. A single-colour chart has one series: the subject itself.
   - **`totals`**: the subject's own `values` from the server. The label's total always comes from here and is never summed (D4, D18).
-  - **`description`**: for screen readers, e.g. "Company by branch, February 2024 to January 2025; exact numbers are in the table below."
+  - **`description`**: for screen readers, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below." With a single month there is no range.
 
 ### 5.5 Loading data (D8–D11, D26, D27)
 
@@ -297,7 +297,7 @@ Each has its examples file for the Components tab.
   - `--color-row-hover`: `#f6f6f6`, Surface/Secondary. That's the ink at 4% on white, written as an opaque colour so the pinned table column covers what scrolls under it
   - `--color-page`: #F7F5ED, Background/Primary
   - `--color-card`: #FFFFFF, Background/Secondary
-  - the chart's five colours (D17): `--color-chart-lavender`, `-peach`, `-maroon`, `-sage` and `-mustard`, declared in the chart's own CSS file while only the chart uses them. A neutral grey for a sixth part is added when something needs it
+  - the chart's five colours (D17): `--color-chart-lavender`, `-peach`, `-maroon`, `-sage` and `-mustard`, declared in the chart's own CSS file while only the chart uses them. A neutral grey, `--color-chart-grey`, is there for a sixth or later part
 - **Type:** Inter Variable, and sizes in rem (0.75, 0.875 and 2.1875rem, i.e. 12, 14 and 35px) with unitless line heights (1.333, 1.4286, 1.25).
 - **Spacing** in rem, for example 0.5, 1, 1.125, 1.5 and 1.75rem (8, 16, 18, 24 and 28px).
 - **Other:** radii (2, 4, 8px), the 1px border, the focus ring (2px, ink), and `--duration-fast` (150ms), shared by the switch's thumb and the table's arrow.
@@ -338,7 +338,7 @@ Figma covers the title, the chart card and the table card. Everything else was m
 - `--shadow-floating`: `0 0.25rem 1rem` in ink at 10%, shared by the dropdown's list and the chart label's card.
 - `--opacity-refreshing`: 0.6.
 - `--control-height`: 2.25rem (36px).
-- `--color-chart-other`: `#c7c7c6`.
+- `--color-chart-grey`: `#c7c7c6`, the chart's colour for a sixth or later part. It lives with the other chart colours in the chart's CSS file.
 
 **Variables with a single user so far,** each declared in its component's CSS file (§5.8):
 

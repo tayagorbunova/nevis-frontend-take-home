@@ -356,7 +356,9 @@ type TreeTableProps<Row> = {
 **Produces:**
 
 ```ts
-type ChartColor = "lavender" | "peach" | "maroon" | "sage" | "mustard"; // the chart turns the name into its CSS variable
+const CHART_PALETTE = ["lavender", "peach", "maroon", "sage", "mustard"] as const; // the palette, in order; lives in palette.ts
+
+type ChartColor = (typeof CHART_PALETTE)[number] | "grey"; // the chart turns the name into its CSS variable
 
 type ChartSeries = { id: string; name: string; color: ChartColor; values: readonly number[] };
 
@@ -424,12 +426,11 @@ It renders a `<figure>`: the title as its `<figcaption>`, then the chart, then t
 - `type ChartModel = { caption: string; description: string; series: ChartSeries[]; totals: number[] }`
 - `chartModel(subject: ChartSubject, months: readonly string[]): ChartModel` (§5.4):
   - `caption`: "<name> by <level of the children>", or just the name when not split
-  - `series`: coloured in D17's order, `lavender`, `peach`, `maroon`, `sage`, `mustard` (the chart's `ChartColor` names; the type allows only these five). The data never has more than five parts. If a sixth has to be handled, add a grey to the chart's palette and to `ChartColor` first (D17)
+  - `series`: coloured in D17's order by position, from the chart's own `CHART_PALETTE` list (imported from `@ui`, so the colour names are written in one place only). A sixth or later part is `grey` (D17, §5.4): this task adds `grey` (`#c7c7c6`, §5.9) to the chart's palette and to `ChartColor`. A chart that isn't split has one series, the subject itself, in the first colour
   - `totals`: the subject's own values, never summed
-  - `description`, e.g. "Company by branch, February 2024 to January 2025. Exact numbers are in the table below." With a single month, there's no range.
+  - `description`, e.g. "Company by branch, Feb 2024 to Jan 2025. Exact numbers are in the table below." With a single month, there's no range.
 - Formatting, with `Intl`, `en-US` and `timeZone: 'UTC'`:
   - `formatMonth('2024-02')` → "Feb 2024"
-  - `formatMonthLong('2024-02')` → "February 2024"
   - `formatCount(value: number | undefined)` → "1,234", or "—" when the value is missing
 
 **Steps:**
