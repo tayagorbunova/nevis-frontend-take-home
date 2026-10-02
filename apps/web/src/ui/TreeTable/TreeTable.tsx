@@ -11,20 +11,9 @@ import {
   type Key,
 } from "react-aria-components";
 
-import styles from "./TreeTable.module.css";
+import { Icon } from "../Icon/Icon";
 
-function Chevron() {
-  return (
-    <svg className={styles.chevron} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M6.5 4.5L10 8L6.5 11.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="square"
-      />
-    </svg>
-  );
-}
+import styles from "./TreeTable.module.css";
 
 export type TreeTableColumn<Row> = {
   id: string;
@@ -83,7 +72,13 @@ export function TreeTable<Row>({
           <Cell key={column.id} className={styles.cell} style={{ textAlign: column.align }}>
             {index === 0 ? (
               <div className={styles.name}>
-                {canOpen ? <Chevron /> : <span className={styles.chevronSpace} />}
+                {canOpen ? (
+                  <span className={styles.chevron}>
+                    <Icon name="chevronRight" />
+                  </span>
+                ) : (
+                  <span className={styles.chevronSpace} />
+                )}
                 {column.cell(row)}
               </div>
             ) : (

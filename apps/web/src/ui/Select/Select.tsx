@@ -9,20 +9,9 @@ import {
   type Key,
 } from "react-aria-components";
 
+import { Icon } from "../Icon/Icon";
+
 import styles from "./Select.module.css";
-
-const CHEVRON_DOWN_PATH = "M4.5 6.5L8 10L11.5 6.5";
-const CHECK_PATH = "M3.5 8.5L6.5 11.5L12.5 5.5";
-
-type IconProps = { path: string };
-
-function Icon({ path }: IconProps) {
-  return (
-    <svg className={styles.icon} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
-    </svg>
-  );
-}
 
 type SelectProps<Id extends string> = {
   label: string;
@@ -59,7 +48,7 @@ export function Select<Id extends string>({
 
       <Button className={styles.trigger}>
         <SelectValue />
-        <Icon path={CHEVRON_DOWN_PATH} />
+        <Icon name="chevronDown" />
       </Button>
 
       <Popover className={styles.popover} offset={4}>
@@ -69,7 +58,7 @@ export function Select<Id extends string>({
               {({ isSelected }) => (
                 <>
                   {item.label}
-                  {isSelected && <Icon path={CHECK_PATH} />}
+                  {isSelected && <Icon name="check" />}
                 </>
               )}
             </ListBoxItem>

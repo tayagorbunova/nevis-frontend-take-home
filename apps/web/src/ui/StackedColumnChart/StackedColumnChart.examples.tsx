@@ -1,7 +1,8 @@
 import { Card } from "../Card/Card";
-import type { Examples, ExamplesMeta } from "../examples";
+import type { Examples, ExamplesMeta } from "../exampleTypes";
 
-import { StackedColumnChart, type ChartSeries, type ChartTotal } from "./StackedColumnChart";
+import type { ChartSeries, ChartTotal } from "./chartTypes";
+import { StackedColumnChart } from "./StackedColumnChart";
 
 export const meta: ExamplesMeta = { title: "StackedColumnChart", wide: true };
 
