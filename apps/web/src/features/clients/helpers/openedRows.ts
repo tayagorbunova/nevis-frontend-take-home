@@ -8,9 +8,9 @@ export function closeRow(openedIds: readonly string[], id: string): string[] {
   return openedIds.filter((openedId) => openedId !== id);
 }
 
-export type ChartSubject = { row: ClientRow; isSplit: boolean };
+export type RowForChart = { row: ClientRow; isSplit: boolean };
 
-export function chartSubject(tree: ClientRow, openedIds: readonly string[]): ChartSubject {
+export function pickRowForChart(tree: ClientRow, openedIds: readonly string[]): RowForChart {
   const visibleRows = listVisibleRows(tree, openedIds);
 
   for (const id of openedIds.toReversed()) {

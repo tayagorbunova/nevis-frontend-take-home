@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 import type { ChartSeries, ChartTotal } from "./chartTypes";
-import { ColumnLabel } from "./components/ColumnLabel";
+import { ColumnTooltip } from "./components/ColumnTooltip";
 import { Swatch } from "./components/Swatch";
 import { toCssColor } from "./palette";
 import styles from "./StackedColumnChart.module.css";
@@ -118,7 +118,7 @@ export function StackedColumnChart({
           offset={spacePerColumn / 2 + 8}
           position={{ y: 40 }}
           content={
-            <ColumnLabel
+            <ColumnTooltip
               statusRegion={statusRegion}
               columnNames={columnNames}
               series={series}

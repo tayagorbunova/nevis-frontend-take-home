@@ -1,7 +1,7 @@
 import { Avatar, Card, TreeTable, type TreeTableColumn } from "@ui";
 
-import { formatCount, formatMonth } from "../model/format";
-import type { ClientRow } from "../model/toClientTree";
+import { formatCount, formatMonth } from "../helpers/format";
+import type { ClientRow } from "../helpers/toClientTree";
 
 import styles from "./ClientsTable.module.css";
 
