@@ -166,7 +166,7 @@ Everything else is worked out from these two values, never stored. The data itse
 - **Open a row:** move its id to the end of the list, so it's the most recent.
 - **Close a row:** remove its id. Rows inside it stay in the list, so reopening the parent shows them still open (React Aria keeps them open while hidden).
 - **What the chart shows** (`chartSubject(tree, openedIds)`):
-  - It shows the **last id in the list that is visible**, meaning all its ancestors are in the list too, split into its children.
+  - It shows the **last id in the list that is visible and has something inside**, split into its children. Visible means all its ancestors are in the list too.
   - If no such row exists (the company is closed), it shows the **company's total as one colour** (D19).
   - Ids that aren't in the current tree are ignored.
 - **Examples:**
