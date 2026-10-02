@@ -43,6 +43,9 @@ describe("what the chart shows", () => {
 
     openedIds = closeRow(openedIds, "anna");
     expect(captionFor(openedIds)).toBe("Branch 1 by advisor");
+
+    openedIds = openRow(closeRow(openedIds, "company"), "company");
+    expect(captionFor(openedIds)).toBe("Company by branch");
   });
 
   it("shows the plain company when the open branch is hidden inside a closed company", () => {

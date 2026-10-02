@@ -57,7 +57,7 @@ const months = [
 ];
 
 const columns: TreeTableColumn<SampleRow>[] = [
-  { id: "name", header: "Name", hideHeader: true, isRowHeader: true, cell: (row) => row.name },
+  { id: "name", header: "Name", hideHeader: true, cell: (row) => row.name },
   ...months.map((month, index): TreeTableColumn<SampleRow> => ({
     id: month,
     header: month,

@@ -4,7 +4,7 @@ import { formatMonth } from "./format";
 import type { RowForChart } from "./openedRows";
 import type { ClientRow } from "./toClientTree";
 
-export type ChartContent = {
+type ChartContent = {
   caption: string;
   description: string;
   series: ChartSeries[];

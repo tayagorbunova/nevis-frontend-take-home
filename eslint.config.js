@@ -3,19 +3,19 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
-const uiLibraries = {
+const UI_LIBRARIES = {
   group: ["react-aria-components", "react-aria", "recharts"],
   message: "Only src/ui/ wraps React Aria and Recharts; use its components.",
 };
-const apiApp = {
+const API_APP = {
   group: ["@nevis/api"],
   message: "The apps share code only through @nevis/contract.",
 };
-const webApp = {
+const WEB_APP = {
   group: ["@nevis/web"],
   message: "The apps share code only through @nevis/contract.",
 };
-const featuresAndApp = {
+const FEATURES_AND_APP = {
   group: ["**/features", "**/app"],
   message: "src/ui/ is the design system: it never depends on features or the app shell.",
 };
@@ -54,20 +54,20 @@ export default defineConfig([
 
   {
     files: ["apps/api/**/*.ts"],
-    rules: { "no-restricted-imports": ["error", { patterns: [webApp] }] },
+    rules: { "no-restricted-imports": ["error", { patterns: [WEB_APP] }] },
   },
   {
     files: ["apps/web/src/**/*.{ts,tsx}"],
     ignores: ["apps/web/src/ui/**", "apps/web/src/test/**"],
-    rules: { "no-restricted-imports": ["error", { patterns: [uiLibraries, apiApp] }] },
+    rules: { "no-restricted-imports": ["error", { patterns: [UI_LIBRARIES, API_APP] }] },
   },
   {
     files: ["apps/web/src/ui/**/*.{ts,tsx}"],
-    rules: { "no-restricted-imports": ["error", { patterns: [apiApp, featuresAndApp] }] },
+    rules: { "no-restricted-imports": ["error", { patterns: [API_APP, FEATURES_AND_APP] }] },
   },
   {
     files: ["apps/web/src/test/**/*.{ts,tsx}"],
-    rules: { "no-restricted-imports": ["error", { patterns: [uiLibraries] }] },
+    rules: { "no-restricted-imports": ["error", { patterns: [UI_LIBRARIES] }] },
   },
   {
     files: ["apps/web/src/**/*.{ts,tsx}"],

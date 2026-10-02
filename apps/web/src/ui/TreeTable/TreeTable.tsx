@@ -19,7 +19,6 @@ export type TreeTableColumn<Row> = {
   id: string;
   header: string;
   hideHeader?: boolean;
-  isRowHeader?: boolean;
   align?: "start" | "end";
   cell: (row: Row) => ReactNode;
 };
@@ -95,7 +94,7 @@ export function TreeTable<Row>({
   }
 
   return (
-    <div className={styles.scroller}>
+    <div className={styles.scroller} tabIndex={-1}>
       <Table
         aria-label={label}
         className={styles.table}
@@ -105,13 +104,13 @@ export function TreeTable<Row>({
         onExpandedChange={handleExpandedChange}
       >
         <TableHeader>
-          {columns.map((column) => (
+          {columns.map((column, index) => (
             <Column
               key={column.id}
               id={column.id}
               className={styles.column}
               style={{ textAlign: column.align }}
-              isRowHeader={column.isRowHeader}
+              isRowHeader={index === 0}
             >
               {column.hideHeader ? (
                 <VisuallyHidden>{column.header}</VisuallyHidden>

@@ -5,14 +5,14 @@ export const CLIENT_COUNTS_PATH = "/api/client-counts";
 const monthSchema = z.string().check(z.regex(/^\d{4}-(0[1-9]|1[0-2])$/));
 const valuesSchema = z.array(z.int().check(z.nonnegative()));
 
-export const apiChannelSchema = z.object({
+const apiChannelSchema = z.object({
   id: z.string(),
   name: z.string(),
   values: valuesSchema,
 });
 export type ApiChannel = z.infer<typeof apiChannelSchema>;
 
-export const apiEmployeeSchema = z.object({
+const apiEmployeeSchema = z.object({
   id: z.string(),
   name: z.string(),
   values: valuesSchema,
@@ -21,7 +21,7 @@ export const apiEmployeeSchema = z.object({
 });
 export type ApiEmployee = z.infer<typeof apiEmployeeSchema>;
 
-export const apiBranchSchema = z.object({
+const apiBranchSchema = z.object({
   id: z.string(),
   name: z.string(),
   values: valuesSchema,
@@ -29,7 +29,7 @@ export const apiBranchSchema = z.object({
 });
 export type ApiBranch = z.infer<typeof apiBranchSchema>;
 
-export const apiCompanySchema = z.object({
+const apiCompanySchema = z.object({
   id: z.string(),
   name: z.string(),
   values: valuesSchema,
@@ -37,18 +37,22 @@ export const apiCompanySchema = z.object({
 });
 export type ApiCompany = z.infer<typeof apiCompanySchema>;
 
+export function listRows(company: ApiCompany) {
+  const branches = company.branches ?? [];
+  const employees = branches.flatMap((branch) => branch.employees ?? []);
+  const channels = employees.flatMap((employee) => employee.channels ?? []);
+
+  return [company, ...branches, ...employees, ...channels];
+}
+
 export const clientCountsResponseSchema = z
   .object({
     months: z.array(monthSchema),
     company: apiCompanySchema,
   })
   .check(
-    z.refine(({ months, company }) => {
-      const branches = company.branches ?? [];
-      const employees = branches.flatMap((branch) => branch.employees ?? []);
-      const channels = employees.flatMap((employee) => employee.channels ?? []);
-      const rows = [company, ...branches, ...employees, ...channels];
-      return rows.every((row) => row.values.length === months.length);
-    }),
+    z.refine(({ months, company }) =>
+      listRows(company).every((row) => row.values.length === months.length),
+    ),
   );
 export type ClientCountsResponse = z.infer<typeof clientCountsResponseSchema>;

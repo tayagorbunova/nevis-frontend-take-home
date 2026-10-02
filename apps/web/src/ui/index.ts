@@ -12,5 +12,4 @@ export { TreeTable } from "./TreeTable/TreeTable";
 
 export type { Examples, ExamplesMeta } from "./exampleTypes";
 export type { ChartSeries, ChartTotal } from "./StackedColumnChart/chartTypes";
-export type { ChartColor } from "./StackedColumnChart/palette";
 export type { TreeTableColumn } from "./TreeTable/TreeTable";
